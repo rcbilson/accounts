@@ -1,0 +1,59 @@
+#!/bin/bash
+
+. defs
+
+infile=$1
+shift
+outfile=categorized/$(basename $infile)
+
+command="
+create temporary table imported (
+	date date,
+	descr text,
+	amount real
+);
+"
+
+case "$infile" in
+	*-tang*)
+		command="$command
+.mode csv
+.import $infile tang_import
+insert into imported select Date, Name||'/'||Memo, Amount from tang_import;
+drop table tang_import;
+		"
+		;;
+	*)
+		command="$command
+create temporary table td_import (
+	date date,
+	descr text,
+	debit real,
+	credit real,
+	balance real
+);
+.mode csv
+.import $infile td_import
+insert into imported select date, descr, credit-debit from td_import;
+		"
+		;;
+esac
+
+echo "$command
+update imported
+set date = substr(date, -4) || '-' ||  
+	   substr('0' || substr(date, 1, instr(date, '/')-1), -2) || '-' ||
+	      substr('0' || substr(date, instr(date, '/')+1, 
+	 length(date)-5-instr(date, '/')), -2)
+	 where date like '_%/_%/____';
+create temporary view possibilities as select imported.rowid as id, imported.date, imported.descr, imported.amount, catmap.category, catmap.subcategory, catmap.score from imported left outer join catmap on imported.descr like catmap.descr;
+.once $outfile
+select date, descr, amount, category, subcategory from possibilities join (select id as bestid, max(score) as bestscore from possibilities group by id) where bestid = id and (bestscore is null or score = bestscore);
+" | sqlite3 $DB
+vim -u vimrc $outfile
+echo -n "ENTER to continue, ^C to abort"
+read dummy
+echo "
+.mode csv
+.import $outfile xact
+" | sqlite3 $DB

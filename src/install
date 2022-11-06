@@ -1,0 +1,3 @@
+#!/bin/bash
+set -ex
+GOBIN=${ACCOUNTS_ROOT}/bin go install knilson.org/accounts/cmd/{query,import,update}

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+. $ACCOUNTS_ROOT/lib/defs
+
+query=
+if test -n "$1"
+then
+	cat=$1
+	amt=$2
+	query="insert into xfer(date, category, amount) values(date('now'), '$cat', $amt);"
+fi
+
+query="$query
+with
+  totals as (
+    select key as category, sum(xact.amount) as amount
+    from xact
+    join xfer_categories on xfer_categories.category = xact.category
+    group by key),
+  xfertot as (
+    select category, sum(xfer.amount) as amount
+    from xfer
+    group by category)
+select totals.category, ifnull(xfertot.amount,0)+totals.amount as total
+from totals
+left outer join xfertot on xfertot.category = totals.category;
+"
+
+echo "$query" | sqlite3 $DB

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. $ACCOUNTS_ROOT/lib/defs
+
+case $1 in
+    ''|*[!0-9]*) months=1;;
+    *) months=$1; shift;;
+esac
+
+addwhere "date > date('now', 'start of month', '-$months months')"
+exec "$@"

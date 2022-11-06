@@ -1,0 +1,3 @@
+export ACCOUNTS_ROOT=$HOME/src/accounts
+export ACCOUNTS_DBFILE=$ACCOUNTS_ROOT/data/xact.db
+export PATH=$HOME/src/accounts/bin:$PATH

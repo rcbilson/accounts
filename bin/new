@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+tmpfile=$(mktemp /tmp/accounts-new.XXXXXX)
+trap 'rm -f $tmpfile' EXIT
+
+query 'state="new"' > $tmpfile
+vim $tmpfile
+update $tmpfile

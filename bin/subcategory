@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. $ACCOUNTS_ROOT/lib/defs
+
+case $1 in
+    ''|*[!0-9]*) addwhere "category = '$1'"; shift;;
+    *) addwhere "category != ''" ;;
+esac
+
+query="SELECT category, subcategory, -sum(amount) as total FROM xact $XACT_WHERE GROUP BY category, subcategory ORDER BY total DESC"
+
+if test -n "$1"
+then
+	query="$query LIMIT $1"
+fi
+
+echo "$query" | sqlite3 $DB

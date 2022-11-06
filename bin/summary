@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. $ACCOUNTS_ROOT/lib/defs
+
+outerwhere="$XACT_WHERE"
+addwhere "category = 'Income'"
+
+query="select 'Income', sum(amount) from xact $XACT_WHERE;
+
+select key, -sum(amount) as total, -sum(amount)*100/(select sum(amount) from xact $XACT_WHERE) from xact join keycats on keycats.category = xact.category $outerwhere group by key order by total desc;
+
+select 'Total', -sum(amount) as total, -sum(amount)*100/(select sum(amount) from xact $XACT_WHERE) from xact join keycats on keycats.category = xact.category $outerwhere;"
+
+echo "$query" | sqlite3 $DB

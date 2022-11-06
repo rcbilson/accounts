@@ -1,0 +1,12 @@
+set -e
+test -n "$XACT_DEBUG" && set -x
+
+DB=$ACCOUNTS_DBFILE
+
+addwhere() {
+	case "$XACT_WHERE" in
+	WHERE*) XACT_WHERE="$XACT_WHERE AND $*" ;;
+	*) XACT_WHERE="WHERE $*" ;;
+	esac
+	export XACT_WHERE
+}

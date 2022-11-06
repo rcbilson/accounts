@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. $ACCOUNTS_ROOT/lib/defs
+
+addwhere "category = 'Income'"
+query="SELECT category, subcategory, sum(amount) as total FROM xact $XACT_WHERE GROUP BY subcategory ORDER BY total DESC"
+
+if test -n "$1"
+then
+	query="$query LIMIT $1"
+fi
+
+echo "$query" | sqlite3 $DB

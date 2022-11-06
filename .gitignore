@@ -1,0 +1,5 @@
+bin/import
+bin/query
+bin/update
+data/
+.DS_Store
