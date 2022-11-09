@@ -55,7 +55,8 @@ create table learned_cat (
         pattern text,
         amount real,
         category text,
-        subcategory text
+        subcategory text,
+        unique(pattern, amount)
 );
         `)
 	check(err)
@@ -90,7 +91,12 @@ create table learned_cat (
 	check(err)
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("insert into learned_cat select :id, :descr, :amount, :category, :subcategory where not exists (select sourceid, pattern, amount from learned_cat where pattern=:descr and amount=:amount and sourceid > :id);")
+	stmt, err := tx.Prepare(`
+insert into learned_cat values(:id, :descr, :amount, :category, :subcategory)
+on conflict (pattern, amount)
+do update set sourceid=:id, category=:category, subcategory=:subcategory
+where :id > sourceid
+        `)
 	check(err)
 
 	rowCount := 0
