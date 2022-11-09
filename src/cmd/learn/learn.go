@@ -38,12 +38,11 @@ func main() {
 	err := envconfig.Process("accounts", &s)
 	check(err)
 
-	db, err := sql.Open("sqlite3", "file:"+s.DbFile)
+	db, err := sql.Open("sqlite3", s.DbFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(1)
 
 	_, err = db.Exec(`drop table if exists learned_cat;`)
 	check(err)
@@ -67,24 +66,12 @@ create table learned_cat (
 		maybeCat    sql.NullString
 		maybeSubcat sql.NullString
 	}
-	records := make([]record, 0)
 
-	{
-		rows, err := db.Query("select rowid, descr, amount, category, subcategory from xact;")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var r record
-			err := rows.Scan(&r.id, &r.descr, &r.amount, &r.maybeCat, &r.maybeSubcat)
-			if err != nil {
-				log.Fatal(err)
-			}
-			records = append(records, r)
-		}
+	rows, err := db.Query("select rowid, descr, amount, category, subcategory from xact;")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer rows.Close()
 
 	tx, err := db.Begin()
 	check(err)
@@ -92,14 +79,21 @@ create table learned_cat (
 
 	learn, err := learning.BeginUpdate(tx)
 	check(err)
+	defer learn.EndUpdate()
 
 	rowCount := 0
 	insertCount := int64(0)
-	for _, r := range records {
+	for rows.Next() {
+		var r record
+		err := rows.Scan(&r.id, &r.descr, &r.amount, &r.maybeCat, &r.maybeSubcat)
+		if err != nil {
+			log.Fatal(err)
+		}
 		rowCount++
 		inserted, err := learn.DoUpdate(r.id, r.descr, r.amount, maybeString(r.maybeCat), maybeString(r.maybeSubcat))
 		checkRow(err, rowCount)
 		insertCount += inserted
+
 	}
 	err = tx.Commit()
 	check(err)
