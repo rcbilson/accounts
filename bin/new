@@ -3,8 +3,12 @@
 set -e
 
 tmpfile=$(mktemp /tmp/accounts-new.XXXXXX)
-trap 'rm -f $tmpfile' EXIT
 
 query 'state="new"' > $tmpfile
 vim $tmpfile
-update $tmpfile
+if update $tmpfile
+then
+        rm $tmpfile
+else
+        echo "update of $tmpfile failed"
+fi

@@ -4,10 +4,15 @@ set -e
 
 tmpfile=$(mktemp /tmp/accounts-query.XXXXXX)
 origfile=$(mktemp /tmp/accounts-orig.XXXXXX)
-trap 'rm -f $tmpfile $origfile' EXIT
+trap 'rm -f $origfile' EXIT
 
 query "$*" > $tmpfile
 cp $tmpfile $origfile
 vim $tmpfile
 cmp -s $tmpfile $origfile && exit 0
-update $tmpfile
+if update $tmpfile
+then
+        rm $tmpfile
+else
+        echo "update of $tmpfile failed"
+fi
