@@ -23,6 +23,20 @@ func check(err error) {
 	}
 }
 
+func checkRow(err error, rowCount int) {
+	if err != nil {
+		log.Fatalf("at line %d: %v", rowCount, err.Error())
+	}
+}
+
+func maybeString(maybe sql.NullString) string {
+	if maybe.Valid {
+		return maybe.String
+	} else {
+		return ""
+	}
+}
+
 type importRecord struct {
 	date   time.Time
 	descr  string
@@ -66,6 +80,19 @@ func parseTangerine(record []string) (*importRecord, error) {
 	return &r, nil
 }
 
+func extractCat(row *sql.Row, category *string, subcategory *string) bool {
+	var maybeCat sql.NullString
+	var maybeSubcat sql.NullString
+	err := row.Scan(&maybeCat, &maybeSubcat)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	check(err)
+	*category = maybeString(maybeCat)
+	*subcategory = maybeString(maybeSubcat)
+	return true
+}
+
 func main() {
 	var s Specification
 	err := envconfig.Process("accounts", &s)
@@ -74,12 +101,22 @@ func main() {
 	db, err := sql.Open("sqlite3", s.DbFile)
 	check(err)
 
-	_, err = db.Exec(`
-create temporary table imported (
-	date date,
-	descr text,
-	amount real
-);
+	findAmt, err := db.Prepare(`
+select category, subcategory from learned_cat where ? like pattern and amount==?
+        `)
+	check(err)
+
+	findApprox, err := db.Prepare(`
+select category, subcategory from learned_cat where ? like pattern order by length(pattern), sourceid desc limit 1
+        `)
+	check(err)
+
+	tx, err := db.Begin()
+	check(err)
+	defer tx.Rollback()
+
+	insert, err := tx.Prepare(`
+insert into xact (date, descr, amount, category, subcategory, state) values(?, ?, ?, ?, ?, "new")
         `)
 	check(err)
 
@@ -91,6 +128,7 @@ create temporary table imported (
 
 		parser := parseTD
 		rowCount := 0
+		insertCount := int64(0)
 		for {
 			record, err := r.Read()
 			if err == io.EOF {
@@ -105,20 +143,21 @@ create temporary table imported (
 			if err != nil {
 				log.Fatalf("at %s row %d: %v", csvFile, rowCount, err)
 			}
-			_, err = db.Exec("insert into imported(date, descr, amount) values (?, ?, ?);",
-				rec.date, rec.descr, rec.amount)
-		}
-	}
+			var category string
+			var subcategory string
+			if !extractCat(findAmt.QueryRow(rec.descr, rec.amount), &category, &subcategory) {
+				extractCat(findApprox.QueryRow(rec.descr), &category, &subcategory)
+			}
 
-	_, err = db.Exec(`
-create temporary view possibilities as select imported.rowid as id, imported.date, imported.descr, imported.amount, catmap.category, catmap.subcategory, catmap.score from imported left outer join catmap on imported.descr like catmap.descr;
-        `)
+			result, err := insert.Exec(rec.date, rec.descr, rec.amount, category, subcategory)
+			checkRow(err, rowCount)
+			rows, err := result.RowsAffected()
+			check(err)
+			insertCount += rows
+		}
+
+		log.Printf("%s: %v rows processed %v inserted", csvFile, rowCount, insertCount)
+	}
+	err = tx.Commit()
 	check(err)
-	result, err := db.Exec(`
-insert into xact select date, descr, amount, category, subcategory, "new" from possibilities join (select id as bestid, max(score) as bestscore from possibilities group by id) where bestid = id and (bestscore is null or score = bestscore);
-        `)
-	check(err)
-	rows, err := result.RowsAffected()
-	check(err)
-	log.Println(rows, "rows inserted")
 }
