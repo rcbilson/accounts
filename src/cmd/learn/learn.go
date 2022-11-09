@@ -3,14 +3,22 @@ package main
 import (
 	"database/sql"
 	"log"
-	"regexp"
 
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/mattn/go-sqlite3"
+	"knilson.org/accounts/learning"
 )
 
 type Specification struct {
 	DbFile string
+}
+
+func maybeString(maybe sql.NullString) string {
+	if maybe.Valid {
+		return maybe.String
+	} else {
+		return ""
+	}
 }
 
 func check(err error) {
@@ -24,15 +32,6 @@ func checkRow(err error, rowCount int) {
 		log.Fatalf("at line %d: %v", rowCount, err.Error())
 	}
 }
-
-func getRowsAffected(result sql.Result) int64 {
-	rows, err := result.RowsAffected()
-	check(err)
-	return rows
-}
-
-var endNumbers = regexp.MustCompile("[0-9]+$")
-var endStar = regexp.MustCompile("\\*.*$")
 
 func main() {
 	var s Specification
@@ -91,40 +90,16 @@ create table learned_cat (
 	check(err)
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(`
-insert into learned_cat values(:id, :descr, :amount, :category, :subcategory)
-on conflict (pattern, amount)
-do update set sourceid=:id, category=:category, subcategory=:subcategory
-where :id > sourceid
-        `)
+	learn, err := learning.BeginUpdate(tx)
 	check(err)
 
 	rowCount := 0
 	insertCount := int64(0)
 	for _, r := range records {
 		rowCount++
-
-		if r.id == "" {
-			panic("aarg")
-		}
-
-		result, err := stmt.Exec(r.id, r.descr, r.amount, r.maybeCat, r.maybeSubcat)
+		inserted, err := learn.DoUpdate(r.id, r.descr, r.amount, maybeString(r.maybeCat), maybeString(r.maybeSubcat))
 		checkRow(err, rowCount)
-		insertCount += getRowsAffected(result)
-
-		noNumbers := endNumbers.ReplaceAllString(r.descr, "%")
-		if noNumbers != r.descr {
-			result, err = stmt.Exec(r.id, noNumbers, r.amount, r.maybeCat, r.maybeSubcat)
-			checkRow(err, rowCount)
-			insertCount += getRowsAffected(result)
-		}
-
-		noStar := endStar.ReplaceAllString(noNumbers, "%")
-		if noStar != noNumbers {
-			result, err = stmt.Exec(r.id, noStar, r.amount, r.maybeCat, r.maybeSubcat)
-			checkRow(err, rowCount)
-			insertCount += getRowsAffected(result)
-		}
+		insertCount += inserted
 	}
 	err = tx.Commit()
 	check(err)
