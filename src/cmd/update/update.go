@@ -49,8 +49,14 @@ func doUpdate(db *sql.DB, record []string, rowCount int) int64 {
 	descr := record[2]
 	amount, err := strconv.ParseFloat(record[3], 64)
 	checkRow(err, rowCount)
-	category := record[4]
-	subcategory := record[5]
+	category := ""
+	subcategory := ""
+	if len(record) > 4 {
+		category = record[4]
+	}
+	if len(record) > 5 {
+		subcategory = record[5]
+	}
 	result, err := db.Exec(
 		"update xact set date=?, descr=?, amount=?, category=?, subcategory=?, state=null where rowid=?",
 		date, descr, amount, category, subcategory, id)
@@ -91,7 +97,7 @@ func main() {
 		checkRow(err, rowCount)
 		if len(record) == 1 {
 			deleteCount += doDelete(db, record[0], rowCount)
-		} else if len(record) == 6 {
+		} else if len(record) >= 4 {
 			updateCount += doUpdate(db, record, rowCount)
 		} else {
 			checkRow(errors.New("unexpected number of fields in row"), rowCount)
