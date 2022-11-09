@@ -5,11 +5,11 @@ import (
 	"regexp"
 )
 
-type LearningContext struct {
+type Context struct {
 	stmt *sql.Stmt
 }
 
-func BeginUpdate(tx *sql.Tx) (*LearningContext, error) {
+func BeginUpdate(tx *sql.Tx) (*Context, error) {
 	stmt, err := tx.Prepare(`
 insert into learned_cat values(:id, :descr, :amount, :category, :subcategory)
 on conflict (pattern, amount)
@@ -19,10 +19,10 @@ where :id > sourceid
 	if err != nil {
 		return nil, err
 	}
-	return &LearningContext{stmt}, nil
+	return &Context{stmt}, nil
 }
 
-func (learn *LearningContext) EndUpdate() error {
+func (learn *Context) EndUpdate() error {
 	return nil
 }
 
@@ -34,7 +34,7 @@ func getRowsAffected(result sql.Result) int64 {
 var endNumbers = regexp.MustCompile("[0-9]+$")
 var endStar = regexp.MustCompile("\\*.*$")
 
-func (learn *LearningContext) DoUpdate(id string, descr string, amount string, category string, subcategory string) (int64, error) {
+func (learn *Context) DoUpdate(id string, descr string, amount string, category string, subcategory string) (int64, error) {
 	insertCount := int64(0)
 
 	result, err := learn.stmt.Exec(id, descr, amount, category, subcategory)

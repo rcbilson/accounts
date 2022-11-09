@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/mattn/go-sqlite3"
+	"knilson.org/accounts/learning"
 )
 
 type Specification struct {
@@ -36,13 +38,13 @@ func getRowsAffected(result sql.Result) int64 {
 	return rows
 }
 
-func doDelete(db *sql.DB, id string, rowCount int) int64 {
-	result, err := db.Exec("delete from xact where rowid=?", id)
+func doDelete(tx *sql.Tx, id string, rowCount int) int64 {
+	result, err := tx.Exec("delete from xact where rowid=?", id)
 	checkRow(err, rowCount)
 	return getRowsAffected(result)
 }
 
-func doUpdate(db *sql.DB, record []string, rowCount int) int64 {
+func doUpdate(tx *sql.Tx, learn *learning.Context, record []string, rowCount int) int64 {
 	id := record[0]
 	date, err := time.Parse("2006-01-02", record[1])
 	checkRow(err, rowCount)
@@ -57,10 +59,11 @@ func doUpdate(db *sql.DB, record []string, rowCount int) int64 {
 	if len(record) > 5 {
 		subcategory = record[5]
 	}
-	result, err := db.Exec(
+	result, err := tx.Exec(
 		"update xact set date=?, descr=?, amount=?, category=?, subcategory=?, state=null where rowid=?",
 		date, descr, amount, category, subcategory, id)
 	checkRow(err, rowCount)
+	_, err = learn.DoUpdate(id, descr, fmt.Sprintf("%f", amount), category, subcategory)
 	return getRowsAffected(result)
 }
 
@@ -73,6 +76,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	check(err)
+	defer tx.Rollback()
+
+	learn, err := learning.BeginUpdate(tx)
+	check(err)
+	defer learn.EndUpdate()
 
 	csvFile := os.Args[1]
 	f, err := os.Open(csvFile)
@@ -96,12 +108,14 @@ func main() {
 		rowCount++
 		checkRow(err, rowCount)
 		if len(record) == 1 {
-			deleteCount += doDelete(db, record[0], rowCount)
+			deleteCount += doDelete(tx, record[0], rowCount)
 		} else if len(record) >= 4 {
-			updateCount += doUpdate(db, record, rowCount)
+			updateCount += doUpdate(tx, learn, record, rowCount)
 		} else {
 			checkRow(errors.New("unexpected number of fields in row"), rowCount)
 		}
 	}
+	err = tx.Commit()
+	check(err)
 	log.Println(rowCount, "rows processed", updateCount, "updates", deleteCount, "deletions")
 }
