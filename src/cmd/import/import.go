@@ -72,9 +72,7 @@ func main() {
 	check(err)
 
 	db, err := sql.Open("sqlite3", s.DbFile)
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 
 	_, err = db.Exec(`
 create temporary table imported (
@@ -83,6 +81,7 @@ create temporary table imported (
 	amount real
 );
         `)
+	check(err)
 
 	for _, csvFile := range os.Args[1:] {
 		f, err := os.Open(csvFile)
