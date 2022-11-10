@@ -3,14 +3,15 @@ package main
 import (
 	"database/sql"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	_ "github.com/mattn/go-sqlite3"
+	"knilson.org/accounts/account"
 )
 
 type Specification struct {
@@ -37,21 +38,15 @@ func maybeString(maybe sql.NullString) string {
 	}
 }
 
-type importRecord struct {
-	date   time.Time
-	descr  string
-	amount float64
-}
-
-func parseTD(record []string) (*importRecord, error) {
+func parseTD(record []string) (*account.Record, error) {
 	// 01/05/2021,SEND E-TFR CA***t5J ,413.00,,13041.20
 	var err error
-	var r importRecord
-	r.date, err = time.Parse("01/02/2006", record[0])
+	var r account.Record
+	r.Date, err = time.Parse("01/02/2006", record[0])
 	if err != nil {
 		return nil, err
 	}
-	r.descr = record[1]
+	r.Descr = record[1]
 	debit, err := strconv.ParseFloat(record[2], 64)
 	if err != nil {
 		debit = 0
@@ -60,65 +55,35 @@ func parseTD(record []string) (*importRecord, error) {
 	if err != nil {
 		credit = 0
 	}
-	r.amount = credit - debit
+	r.Amount = fmt.Sprintf("%.2f", credit-debit)
 	return &r, nil
 }
 
-func parseTangerine(record []string) (*importRecord, error) {
+func parseTangerine(record []string) (*account.Record, error) {
 	// 1/1/2021,DEBIT,Recurring Internet Withdrawal to,SPOINT To 3023010786,-250
 	var err error
-	var r importRecord
-	r.date, err = time.Parse("1/2/2006", record[0])
+	var r account.Record
+	r.Date, err = time.Parse("1/2/2006", record[0])
 	if err != nil {
 		return nil, err
 	}
-	r.descr = record[2] + "/" + record[3]
-	r.amount, err = strconv.ParseFloat(record[4], 64)
+	r.Descr = record[2] + "/" + record[3]
+	_, err = strconv.ParseFloat(record[4], 64)
 	if err != nil {
-		r.amount = 0
+		return nil, err
 	}
+	r.Amount = record[4]
 	return &r, nil
 }
 
-func extractCat(row *sql.Row, category *string, subcategory *string) bool {
-	var maybeCat sql.NullString
-	var maybeSubcat sql.NullString
-	err := row.Scan(&maybeCat, &maybeSubcat)
-	if err == sql.ErrNoRows {
-		return false
-	}
-	check(err)
-	*category = maybeString(maybeCat)
-	*subcategory = maybeString(maybeSubcat)
-	return true
-}
-
 func main() {
-	var s Specification
-	err := envconfig.Process("accounts", &s)
+	acct, err := account.Open()
 	check(err)
+	defer acct.Close()
 
-	db, err := sql.Open("sqlite3", s.DbFile)
+	err = acct.BeginUpdate()
 	check(err)
-
-	findAmt, err := db.Prepare(`
-select category, subcategory from learned_cat where ? like pattern and amount==?
-        `)
-	check(err)
-
-	findApprox, err := db.Prepare(`
-select category, subcategory from learned_cat where ? like pattern order by length(pattern), sourceid desc limit 1
-        `)
-	check(err)
-
-	tx, err := db.Begin()
-	check(err)
-	defer tx.Rollback()
-
-	insert, err := tx.Prepare(`
-insert into xact (date, descr, amount, category, subcategory, state) values(?, ?, ?, ?, ?, "new")
-        `)
-	check(err)
+	defer acct.AbortUpdate()
 
 	for _, csvFile := range os.Args[1:] {
 		f, err := os.Open(csvFile)
@@ -128,7 +93,7 @@ insert into xact (date, descr, amount, category, subcategory, state) values(?, ?
 
 		parser := parseTD
 		rowCount := 0
-		insertCount := int64(0)
+		var stats account.Stats
 		for {
 			record, err := r.Read()
 			if err == io.EOF {
@@ -143,21 +108,17 @@ insert into xact (date, descr, amount, category, subcategory, state) values(?, ?
 			if err != nil {
 				log.Fatalf("at %s row %d: %v", csvFile, rowCount, err)
 			}
-			var category string
-			var subcategory string
-			if !extractCat(findAmt.QueryRow(rec.descr, rec.amount), &category, &subcategory) {
-				extractCat(findApprox.QueryRow(rec.descr), &category, &subcategory)
-			}
 
-			result, err := insert.Exec(rec.date, rec.descr, rec.amount, category, subcategory)
+			err = acct.InferCategory(rec)
 			checkRow(err, rowCount)
-			rows, err := result.RowsAffected()
-			check(err)
-			insertCount += rows
+
+			s, err := acct.Insert(rec)
+			checkRow(err, rowCount)
+			stats.Add(s)
 		}
 
-		log.Printf("%s: %v rows processed %v inserted", csvFile, rowCount, insertCount)
+		log.Printf("%s: %v rows processed %v", csvFile, rowCount, stats)
 	}
-	err = tx.Commit()
+	err = acct.CompleteUpdate()
 	check(err)
 }

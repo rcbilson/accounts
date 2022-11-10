@@ -1,24 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 
-	"github.com/kelseyhightower/envconfig"
-	_ "github.com/mattn/go-sqlite3"
-	"knilson.org/accounts/learning"
+	"knilson.org/accounts/account"
 )
 
 type Specification struct {
 	DbFile string
-}
-
-func maybeString(maybe sql.NullString) string {
-	if maybe.Valid {
-		return maybe.String
-	} else {
-		return ""
-	}
 }
 
 func check(err error) {
@@ -34,69 +23,31 @@ func checkRow(err error, rowCount int) {
 }
 
 func main() {
-	var s Specification
-	err := envconfig.Process("accounts", &s)
-	check(err)
-
-	db, err := sql.Open("sqlite3", s.DbFile)
+	acct, err := account.Open()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer acct.Close()
 
-	_, err = db.Exec(`drop table if exists learned_cat;`)
+	acct.ResetLearning()
+
+	ch, err := acct.Query("")
 	check(err)
 
-	_, err = db.Exec(`
-create table learned_cat (
-        sourceid integer,
-        pattern text,
-        amount real,
-        category text,
-        subcategory text,
-        unique(pattern, amount)
-);
-        `)
+	err = acct.BeginUpdate()
 	check(err)
-
-	type record struct {
-		id          string
-		descr       string
-		amount      string
-		maybeCat    sql.NullString
-		maybeSubcat sql.NullString
-	}
-
-	rows, err := db.Query("select rowid, descr, amount, category, subcategory from xact;")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	tx, err := db.Begin()
-	check(err)
-	defer tx.Rollback()
-
-	learn, err := learning.BeginUpdate(tx)
-	check(err)
-	defer learn.EndUpdate()
+	defer acct.AbortUpdate()
 
 	rowCount := 0
-	insertCount := int64(0)
-	for rows.Next() {
-		var r record
-		err := rows.Scan(&r.id, &r.descr, &r.amount, &r.maybeCat, &r.maybeSubcat)
-		if err != nil {
-			log.Fatal(err)
-		}
+	var stats account.Stats
+	for r := range ch {
 		rowCount++
-		inserted, err := learn.DoUpdate(r.id, r.descr, r.amount, maybeString(r.maybeCat), maybeString(r.maybeSubcat))
+		s, err := acct.UpdateLearning(r)
 		checkRow(err, rowCount)
-		insertCount += inserted
-
+		stats.Add(s)
 	}
-	err = tx.Commit()
+	err = acct.CompleteUpdate()
 	check(err)
 
-	log.Println(rowCount, "rows processed", insertCount, "inserted")
+	log.Println(rowCount, "rows processed", stats)
 }
