@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-        defer account.Close()
+        defer acct.Close()
 
 	where := os.Args[1]
 	ch, err := acct.Query(where)
