@@ -48,6 +48,9 @@ func doUpdate(acct *account.Context, record []string, rowCount int) account.Stat
 	}
 	stats, err := acct.Update(&r)
 	checkRow(err, rowCount)
+        s, err := acct.UpdateLearning(&r)
+        checkRow(err, rowCount)
+        stats.Add(s)
 	return stats
 }
 
