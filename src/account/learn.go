@@ -97,7 +97,10 @@ select category, subcategory from learned_cat where ? like pattern and amount==?
 
 	if ctx.findApproxStmt == nil {
 		findApprox, err := ctx.db.Prepare(`
-select category, subcategory from learned_cat where ? like pattern order by length(pattern), sourceid desc limit 1
+select category, subcategory from learned_cat
+where ? like pattern
+order by length(pattern) desc, sourceid desc
+limit 1
                 `)
 		if err != nil {
 			return err

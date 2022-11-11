@@ -14,10 +14,6 @@ import (
 	"knilson.org/accounts/account"
 )
 
-type Specification struct {
-	DbFile string
-}
-
 func check(err error) {
 	if err != nil {
 		log.Fatal(err.Error())

@@ -69,8 +69,6 @@ func (ctx *Context) Update(r *Record) (Stats, error) {
 		return stats, err
 	}
 	stats.Updates = getRowsAffected(result)
-	s, err := ctx.UpdateLearning(r)
-	stats.Add(s)
 	return stats, err
 }
 
@@ -96,6 +94,6 @@ insert into xact (date, descr, amount, category, subcategory, state) values(?, ?
 	if err != nil {
 		return stats, err
 	}
-	stats.Updates = getRowsAffected(result)
+	stats.Inserts = getRowsAffected(result)
 	return stats, err
 }
