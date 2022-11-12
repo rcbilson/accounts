@@ -1,8 +1,8 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -26,14 +26,6 @@ func checkRow(err error, rowCount int) {
 	}
 }
 
-func maybeString(maybe sql.NullString) string {
-	if maybe.Valid {
-		return maybe.String
-	} else {
-		return ""
-	}
-}
-
 func parseTD(record []string) (*account.Record, error) {
 	// 01/05/2021,SEND E-TFR CA***t5J ,413.00,,13041.20
 	var err error
@@ -50,6 +42,9 @@ func parseTD(record []string) (*account.Record, error) {
 	credit, err := strconv.ParseFloat(record[3], 64)
 	if err != nil {
 		credit = 0
+	}
+	if credit == 0 && debit == 0 {
+		return nil, errors.New("No valid credit/debit")
 	}
 	r.Amount = fmt.Sprintf("%.2f", credit-debit)
 	return &r, nil
