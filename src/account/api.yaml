@@ -1,0 +1,94 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Accounts API
+  description: Get and update account information
+
+servers:
+  - url: https://example.io/v1
+
+security:
+  - BasicAuth: []
+
+paths:
+  /transactions:
+    get:
+      description: Returns a list of transactions
+      parameters:
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: Successfully returned a list of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/400Error'
+
+    post:
+      description: Lets a user insert or update a transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '200':
+          description: Successfully created or updated the transaction
+        '400':
+          $ref: '#/components/responses/400Error'
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+            type: string
+            format: date
+        description:
+            type: string
+        amount:
+            type: string
+        category:
+            type: string
+        subcategory:
+            type: string
+
+  parameters:
+    PageLimit:
+      name: limit
+      in: query
+      description: Limits the number of items on a page
+      schema:
+        type: integer
+      
+    PageOffset:
+      name: offset
+      in: query
+      description: Specifies the page number to be displayed
+      schema:
+        type: integer
+
+  responses:
+    400Error:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object 
+            properties:
+              message:
+                type: string

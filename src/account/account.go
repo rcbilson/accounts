@@ -1,5 +1,7 @@
 package account
 
+//go:generate oapi-codegen -package account -o api.gen.go api.yaml
+
 import (
 	"database/sql"
 	"errors"
