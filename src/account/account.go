@@ -1,6 +1,6 @@
 package account
 
-//go:generate oapi-codegen -package account -o api.gen.go api.yaml
+//go:generate oapi-codegen -package api -o api/api.gen.go api/api.yaml
 
 import (
 	"database/sql"

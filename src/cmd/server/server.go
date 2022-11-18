@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"knilson.org/accounts/account"
+	"knilson.org/accounts/account/api"
 )
 
 type Server struct {
@@ -24,7 +25,7 @@ func NewServer() *Server {
 }
 
 // (GET /transactions)
-func (s *Server) GetTransactions(ctx echo.Context, params account.GetTransactionsParams) error {
+func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsParams) error {
 	acct, err := account.Open()
 	if err != nil {
 		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -41,9 +42,9 @@ func (s *Server) GetTransactions(ctx echo.Context, params account.GetTransaction
 	if err != nil {
 		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error querying db: %v", err))
 	}
-	results := make([]account.Transaction, 0)
+	results := make([]api.Transaction, 0)
 	for r := range ch {
-		var t account.Transaction
+		var t api.Transaction
 		t.Id = &r.Id
 		t.Date = &openapi_types.Date{r.Date}
 		t.Description = &r.Descr
@@ -65,7 +66,7 @@ func main() {
 	var port = flag.Int("port", 8080, "Port for test HTTP server")
 	flag.Parse()
 
-	swagger, err := account.GetSwagger()
+	swagger, err := api.GetSwagger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
 		os.Exit(1)
@@ -94,7 +95,7 @@ func main() {
 	e.Use(middleware.OapiRequestValidatorWithOptions(swagger, validatorOptions))
 
 	// We now register our petStore above as the handler for the interface
-	account.RegisterHandlers(e, s)
+	api.RegisterHandlers(e, s)
 
 	// And we serve HTTP until the world ends.
 	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%d", *port)))
