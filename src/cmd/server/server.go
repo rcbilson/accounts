@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	oapifilter "github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
@@ -24,8 +25,34 @@ func NewServer() *Server {
 
 // (GET /transactions)
 func (s *Server) GetTransactions(ctx echo.Context, params account.GetTransactionsParams) error {
-	log.Println("GetTransactions")
-	return ctx.String(http.StatusOK, "GetTransactions")
+	acct, err := account.Open()
+	if err != nil {
+		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+	}
+	query := "state is null order by date desc"
+	if params.Limit != nil {
+		query = fmt.Sprintf("%s limit %d", query, *params.Limit)
+	}
+	if params.Offset != nil {
+		query = fmt.Sprintf("%s offset %d", query, *params.Offset)
+	}
+	log.Println("GetTransactions %s", query)
+	ch, err := acct.Query(query)
+	if err != nil {
+		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error querying db: %v", err))
+	}
+	results := make([]account.Transaction, 0)
+	for r := range ch {
+		var t account.Transaction
+		t.Id = &r.Id
+		t.Date = &openapi_types.Date{r.Date}
+		t.Description = &r.Descr
+		t.Amount = &r.Amount
+		t.Category = &r.Category
+		t.Subcategory = &r.Subcategory
+		results = append(results, t)
+	}
+	return ctx.JSON(http.StatusOK, results)
 }
 
 // (POST /transactions)

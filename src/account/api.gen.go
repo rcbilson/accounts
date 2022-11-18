@@ -47,6 +47,11 @@ type N400Error struct {
 	Message *string `json:"message,omitempty"`
 }
 
+// N500Error defines model for 500Error.
+type N500Error struct {
+	Message *string `json:"message,omitempty"`
+}
+
 // GetTransactionsParams defines parameters for GetTransactions.
 type GetTransactionsParams struct {
 	// Limit Limits the number of items on a page
@@ -339,6 +344,9 @@ type GetTransactionsResponse struct {
 	JSON400      *struct {
 		Message *string `json:"message,omitempty"`
 	}
+	JSON500 *struct {
+		Message *string `json:"message,omitempty"`
+	}
 }
 
 // Status returns HTTPResponse.Status
@@ -436,6 +444,15 @@ func ParseGetTransactionsResponse(rsp *http.Response) (*GetTransactionsResponse,
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest struct {
+			Message *string `json:"message,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 
@@ -559,17 +576,18 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/5RUwW7bMAz9FYHb0ajTbSffWmAYCgxYsfZW9KDIdKLCllSSCmYE/vdBcho7qVu0N5ui",
-	"+B4f+bQH47vgHTphqPYQNOkOBSn/3eoN/radlfRTIxuyQax3UEEOs5ItKhe7NZLyjbKCHSvvlFZBbxAK",
-	"sCn3OSL1UIDTHUIFba5YAJstdjqVlj6kA+sEN0gwDEWG/tM0jAvYdwGNbSyO8AnphYN4tUZVWw6t7rF+",
-	"g4Af677LYCiAkIN3jFmKH6vVTyJP6dt4J+gyMR1Ca41OxMonTuz2s6qBfEASO5bokDmpMsGxkHWb3O8h",
-	"4tdPaGTEP236xu10a2tF+ByRJV8akXLxe9KOtRmTz5F15+PI9wy4AKMFN576xcNaS6bbeOq0QDUGioXE",
-	"OdWFQrZeDHNcv4O/oEoBjCaSlf4utT52d63Zmqso26P46c46RSeuW5Ewympd41/v1C8UpV2tYkg9Km1M",
-	"kkyl5NR7SipArLSp2NV4yurq9gYK2CHxWOXyYnWxSp35gE4HCxV8z6ECgpZtplvKNKoc2Czt+F+USI6V",
-	"Vq1lSeY6uZYRKPO6qUf696fncyc/7OErYQMVfCknv5dTSjk5fSg+lHzw5vB45pNvq9WnLJKfjPSxhHnY",
-	"73K+3NNWaCLdL1nlLhqDzE1s215RFhLrt5QciuTttxgceyuPD0AGDJ6XHkWUNLHISMo6RhLl6bhSc9xX",
-	"A7z1fD7Bg9Ovfd1/StIPKzk+cs/REtZQCUUclqf5jryGUAvWU591fpTldGKfVnhu9by/M5M/PKatY6Td",
-	"y3JHag8W56os8Z/uQosX1pe7Sxgeh/8BAAD//322xQjlBgAA",
+	"H4sIAAAAAAAC/8RVTW/jOAz9KwJ3j0ad7sfFtxZYLAossMW2t6IHRaYTFbakklSwRuD/PpCUiZPU7bSn",
+	"ucUkxff49bIH44fgHTphaPYQNOkBBSl/3esN/mMHK+mjRTZkg1jvoIFsZiVbVC4OayTlO2UFB1beKa2C",
+	"3iBUYFPsa0QaoQKnB4QG+pyxAjZbHHRKLWNIDusEN0gwTVWG/rfrGBewHwIa21ks8AnpOwfxao2qtRx6",
+	"PWL7DgFf8n7IYKqAkIN3jLkVf6xWfxF5Sr+Nd4IuE9Mh9NboRKx+4cRuf5I1kA9IYkuKAZlTV2Y4FrJu",
+	"k+s9WPz6BY0U/POi79xO97ZVhK8RWWCq4M+fzekBaYekMJNI7gKTMz+SdqxNibyE1YOPhewFagVGC248",
+	"jYvOVkvm2nkatEBTDNVC4CnPhUS2XTRzXH+Av9CSChhNJCvjQyq9VHer2ZqbKNtj59ObdbLOXLciofTU",
+	"us6/XfK/UZR2rYoh1ai0MallKgWn2lNQBWKlT8luipfVzf0dVLBD4pLl+mp1tUqV+YBOBwsN/J5NFQQt",
+	"20y3lnlU2bBZOrr/UCI5Vlr1liVd+9mzjECZ111b6D+e+0+l5WkPvxJ20MAv9SxA9RxSz9IzVZ8KPojF",
+	"9HxxuL+tVl+6j6xh6ccS5mG/69PlnrdCE+lx8U6iMcjcxb4fFeVGYvteJ6cqic17DI611UdFKkrw4wdH",
+	"ucgMg+clWUdJI46MpKxjJFGejjt4SvTNxO89X478oFW3vh2/NINPt77I9Gu0hC00QhGn5fF/MA9DqAXb",
+	"uc42/63I+Yi/OJJpOtWGvPAnqvD0nNaUs3qWa4jUHzSBm7rG//UQeryyvt5dw/Q8fQsAAP//v9vjfacH",
+	"AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

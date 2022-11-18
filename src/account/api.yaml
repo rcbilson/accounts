@@ -28,6 +28,8 @@ paths:
                   $ref: '#/components/schemas/Transaction'
         '400':
           $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
 
     post:
       description: Lets a user insert or update a transaction
@@ -85,6 +87,15 @@ components:
   responses:
     400Error:
       description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object 
+            properties:
+              message:
+                type: string
+    500Error:
+      description: Server error
       content:
         application/json:
           schema:
