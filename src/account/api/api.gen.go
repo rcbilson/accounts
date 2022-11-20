@@ -26,6 +26,11 @@ const (
 	BasicAuthScopes = "BasicAuth.Scopes"
 )
 
+// Error defines model for Error.
+type Error struct {
+	Message *string `json:"message,omitempty"`
+}
+
 // Transaction defines model for Transaction.
 type Transaction struct {
 	Amount      *string             `json:"amount,omitempty"`
@@ -61,14 +66,10 @@ type State = string
 type Subcategory = string
 
 // N400Error defines model for 400Error.
-type N400Error struct {
-	Message *string `json:"message,omitempty"`
-}
+type N400Error = Error
 
 // N500Error defines model for 500Error.
-type N500Error struct {
-	Message *string `json:"message,omitempty"`
-}
+type N500Error = Error
 
 // GetTransactionsParams defines parameters for GetTransactions.
 type GetTransactionsParams struct {
@@ -473,12 +474,8 @@ type GetTransactionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Transaction
-	JSON400      *struct {
-		Message *string `json:"message,omitempty"`
-	}
-	JSON500 *struct {
-		Message *string `json:"message,omitempty"`
-	}
+	JSON400      *Error
+	JSON500      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -500,9 +497,7 @@ func (r GetTransactionsResponse) StatusCode() int {
 type PostTransactionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON400      *struct {
-		Message *string `json:"message,omitempty"`
-	}
+	JSON400      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -569,18 +564,14 @@ func ParseGetTransactionsResponse(rsp *http.Response) (*GetTransactionsResponse,
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest struct {
-			Message *string `json:"message,omitempty"`
-		}
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest struct {
-			Message *string `json:"message,omitempty"`
-		}
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -606,9 +597,7 @@ func ParsePostTransactionsResponse(rsp *http.Response) (*PostTransactionsRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest struct {
-			Message *string `json:"message,omitempty"`
-		}
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -750,21 +739,21 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8RWTW/jNhD9KwTbQwsIkbcfF9+ybbYIGqBpvT0tcqCpscWtRDIzw3SNQP+9IOnIsi0l",
-	"ci97k8nhvDd8wzd+ltq13lmwTHL5LL1C1QIDpl+/KIatw138roA0Gs/GWbmUH0zDgGK9E/BFaRatYl0L",
-	"Z4V+OVJIEwMfA6QfVrUgl3KwTbqGVsXUvPNxjxiN3cquK+SviuEDuvYc+EZhY4BYVIpBbByKf2uja4FA",
-	"oWESVLvQVGINAsE7ZKgmmFQvEEMmG4et4v2uLCaY/W3ZNP+bmnU8k17GuZBfpHRn/oHXNEtqGbsVgwDx",
-	"3erPO3F3+/uN8IoZ0H4/Ra2HeF3Ee7WFO9MaPqeSlklwDcKGdg0o3EYYhpZiDynh1RYm0JuUcQTZWIYt",
-	"YA/9x2ZDMIK98qDNxkCGj0gvHNhFYSpDvlG7SWVczvsGgxVHhea/G+Ks6Bjiy95rl70Ka335a6XBqQns",
-	"o4hpBl0hEcg7S5Cs46fF4gbRYfzWzjLYJIXyvjFaRV7lZ4rkngdJPToPyCanaIEo9sFovfsVt/4MmjP+",
-	"cc239kk1phIIjwGIZVfIn782pxXgE6CARCJuZ5iU+SMqS0rnyFNY1bqQyZ6gFnKo+tlmtW/CN3zjhOdI",
-	"IlONLtNx1719JYUk0AEN71ax9Fzde0VGXweu+5uPZ9Zx9cC1Zvb5To3duPMe/w1YKFuJ4JP9Kq3jlYkY",
-	"HGuPQYVkw01Mdp13SVzf38pCPgFSzvLuanG1iJU5D1Z5I5fyx7RUSK+4TnRLPkiVFrZjNvMXcEBLQonG",
-	"EEd/OzqWEDDxuq0y/Y/H+8NR/OlZfouwkUv5TXkY2OUhpOwnZlfMis2zZUZw/x9gRuzQhObw6AfJnNzJ",
-	"BGcEHsbOzOD9oOgeTizsh8XiIqdI8yt+jGHuX3o5fOaH96EQ1W7UMYLWQLQJTbMTmFoKqqme6opou1MM",
-	"+trK3puzJ759oDfOxNA7GhvpwLHZAwEKYwmQhcP+NQ6JnvX+vaPT5t+79ntX7S7SYPbV54H1GAxCJZeM",
-	"Abpx+V/RQyMohupQZ5X+UvCxxBdK0nVDl0xPf+CPnx5im1KaI9kXAjZ7d6RlWcIX1foGrowrn97J7qH7",
-	"LwAA///Z0CYf4QsAAA==",
+	"H4sIAAAAAAAC/7xWTW/jNhD9KwTbQwsIkbcfF9+ybbYIGqBpvT0tcqCpkcWtRDIzo3SNQP+9IGnLsi3F",
+	"clH0ZpPDeW/4hm/0KrVrvLNgmeTyVXqFqgEGjP9+Ugwbh9vwuwDSaDwbZ+VSfjA1A4r1VsAXpVk0inUl",
+	"nBV6fySTJgQ+txD/WNWAXMrBNukKGhVS89aHPWI0diO7LpM/K4YP6Jpz4DuFtQFiUSgGUToUf1dGVwKB",
+	"2ppJUOXauhBrEAjeIUMxwaTYQwyZlA4bxbtdmU0w+9Oyqf81Net4Jr2EcyW/QOnB/AVvaRbVMnYjBgHi",
+	"m9XvD+Lh/tc74RUzoP12iloP8baIj2oDD6YxfE4lLpPgCoRtmzWgcKUwDA2FHlLCqw1MoNcx4wiysQwb",
+	"wB76t7IkGMFeedCmNJDgA9KeA7sgTGHI12o7qYxLeS8wWHFQaP67IU6KjiHu99667FW71te/VhqcmsA+",
+	"iphm0GUSgbyzBNE6flgs7hAdht/aWQYbpVDe10arwCv/TIHc6yDp1wilXMqv8oMp5WmX8pQtAh0Xd29f",
+	"VG0KgfDcArHsMvnj/wa+AnwBFLDb399QvIKegkfnAdmkm2mAKLT3qIy7Fbf+DDqW8hGVJaUT3Gkq1bg2",
+	"lXaSKZPDZjjbLHa9ecFOToodSWSK0WU6bsaLZYYjoFs0vF2F+0vVvVdk9G3LVa9TOLMOqweuFbNPwhhb",
+	"uvPW/wVYKFuI1kdXVlqHKxMhONQegjLJhuuQ7Dbtkrh9vJeZfAGklOXdzeJmESpzHqzyRi7l93Epk15x",
+	"FenmfJAqLmzG3OcP4BYtCSVqQxxs7+hYRMDI675I9D8e7w8n9Kfxrj2E5P0g7bJZsWnkzAjuPw1mxA69",
+	"aQ6Pfr7MyR29cUbgYRrNDN7Nj+7pxNm+Wyyu8pU41i4ZzPCZH96HQlTbUdtptQaisq3rrcDYUlBM9VSX",
+	"BTeeYtDXlveWnRz08oHeZiND72hs0gOHZm8JUBhLgCwc9q9xSPSs9x8dnTb/zuPfu2L7n3n70dWnOfbc",
+	"GoRCLhlb6Mblf0MPjaAYikOdRfzS4GOJr5Sk64YuGZ/+wB8/PYU2pTiMki+0WO/ckZZ5Dl9U42u4MS5/",
+	"eSe7p+6fAAAA///3x1Sg+AsAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

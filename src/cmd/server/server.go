@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/deepmap/oapi-codegen/examples/petstore-expanded/echo/api/models"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	oapifilter "github.com/getkin/kin-openapi/openapi3filter"
@@ -24,11 +25,21 @@ func NewServer() *Server {
 	return &Server{}
 }
 
+// This function wraps sending of an error in the Error format, and
+// handling the failure to marshal that.
+func sendError(ctx echo.Context, code int, message string) error {
+	sendErr := models.Error{
+		Message: message,
+	}
+	err := ctx.JSON(code, sendErr)
+	return err
+}
+
 // (GET /transactions)
 func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsParams) error {
 	acct, err := account.Open()
 	if err != nil {
-		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
 	query := account.QuerySpec{
 		DescrLike:   params.DescrLike,
@@ -46,7 +57,7 @@ func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsPar
 	}
 	ch, err := acct.Query(query)
 	if err != nil {
-		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error querying db: %v", err))
+		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
 	}
 	results := make([]api.Transaction, 0)
 	for r := range ch {
@@ -62,10 +73,56 @@ func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsPar
 	return ctx.JSON(http.StatusOK, results)
 }
 
+func emptyIfNil(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // (POST /transactions)
 func (s *Server) PostTransactions(ctx echo.Context) error {
-	log.Println("PostTransactions")
-	return ctx.String(http.StatusOK, "PostTransactions")
+	log.Println("PostTransactions", ctx.Request().Body)
+	var t api.Transaction
+	err := ctx.Bind(&t)
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
+	}
+
+	acct, err := account.Open()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+	}
+        err = acct.BeginUpdate()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+	}
+        defer acct.AbortUpdate()
+
+	var r account.Record
+	if t.Date != nil {
+                r.Date = t.Date.Time
+        }
+	r.Id = emptyIfNil(t.Id)
+	r.Descr = emptyIfNil(t.Description)
+	r.Amount = emptyIfNil(t.Amount)
+	r.Category = emptyIfNil(t.Category)
+	r.Subcategory = emptyIfNil(t.Subcategory)
+
+        if r.Id == "" {
+                _, err = acct.Insert(&r)       
+        } else {
+                _, err = acct.Update(&r)
+        }
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error on update/insert: %v", err))
+	}
+        err = acct.CompleteUpdate()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }
 
 func main() {

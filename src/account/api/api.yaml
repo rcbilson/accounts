@@ -58,6 +58,12 @@ components:
       scheme: basic
 
   schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
     Transaction:
       type: object
       properties:
@@ -140,16 +146,10 @@ components:
       content:
         application/json:
           schema:
-            type: object 
-            properties:
-              message:
-                type: string
+            $ref: '#/components/schemas/Error'
     500Error:
       description: Server error
       content:
         application/json:
           schema:
-            type: object 
-            properties:
-              message:
-                type: string
+            $ref: '#/components/schemas/Error'
