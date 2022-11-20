@@ -36,11 +36,29 @@ type Transaction struct {
 	Subcategory *string             `json:"subcategory,omitempty"`
 }
 
+// Category defines model for Category.
+type Category = string
+
+// DateFrom defines model for DateFrom.
+type DateFrom = openapi_types.Date
+
+// DateUntil defines model for DateUntil.
+type DateUntil = openapi_types.Date
+
+// DescrLike defines model for DescrLike.
+type DescrLike = string
+
 // PageLimit defines model for PageLimit.
 type PageLimit = int
 
 // PageOffset defines model for PageOffset.
 type PageOffset = int
+
+// State defines model for State.
+type State = string
+
+// Subcategory defines model for Subcategory.
+type Subcategory = string
 
 // N400Error defines model for 400Error.
 type N400Error struct {
@@ -54,6 +72,24 @@ type N500Error struct {
 
 // GetTransactionsParams defines parameters for GetTransactions.
 type GetTransactionsParams struct {
+	// DateFrom Earliest date for which results should be reported
+	DateFrom *DateFrom `form:"dateFrom,omitempty" json:"dateFrom,omitempty"`
+
+	// DateUntil Earliest date for which results should not be reported
+	DateUntil *DateUntil `form:"dateUntil,omitempty" json:"dateUntil,omitempty"`
+
+	// Category Filter by exact match on category
+	Category *Category `form:"category,omitempty" json:"category,omitempty"`
+
+	// Subcategory Filter by exact match on subcategory
+	Subcategory *Subcategory `form:"subcategory,omitempty" json:"subcategory,omitempty"`
+
+	// DescrLike Filter by matching description (SQL LIKE pattern)
+	DescrLike *DescrLike `form:"descrLike,omitempty" json:"descrLike,omitempty"`
+
+	// State Filter by exact match on state
+	State *State `form:"state,omitempty" json:"state,omitempty"`
+
 	// Limit Limits the number of items on a page
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -202,6 +238,102 @@ func NewGetTransactionsRequest(server string, params *GetTransactionsParams) (*h
 	}
 
 	queryValues := queryURL.Query()
+
+	if params.DateFrom != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dateFrom", runtime.ParamLocationQuery, *params.DateFrom); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.DateUntil != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dateUntil", runtime.ParamLocationQuery, *params.DateUntil); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Category != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "category", runtime.ParamLocationQuery, *params.Category); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Subcategory != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "subcategory", runtime.ParamLocationQuery, *params.Subcategory); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.DescrLike != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "descrLike", runtime.ParamLocationQuery, *params.DescrLike); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.State != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "state", runtime.ParamLocationQuery, *params.State); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
 
 	if params.Limit != nil {
 
@@ -510,6 +642,48 @@ func (w *ServerInterfaceWrapper) GetTransactions(ctx echo.Context) error {
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetTransactionsParams
+	// ------------- Optional query parameter "dateFrom" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "dateFrom", ctx.QueryParams(), &params.DateFrom)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter dateFrom: %s", err))
+	}
+
+	// ------------- Optional query parameter "dateUntil" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "dateUntil", ctx.QueryParams(), &params.DateUntil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter dateUntil: %s", err))
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "category", ctx.QueryParams(), &params.Category)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category: %s", err))
+	}
+
+	// ------------- Optional query parameter "subcategory" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "subcategory", ctx.QueryParams(), &params.Subcategory)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter subcategory: %s", err))
+	}
+
+	// ------------- Optional query parameter "descrLike" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "descrLike", ctx.QueryParams(), &params.DescrLike)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter descrLike: %s", err))
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", ctx.QueryParams(), &params.State)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter state: %s", err))
+	}
+
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
@@ -576,18 +750,21 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8RVTW/jOAz9KwJ3j0ad7sfFtxZYLAossMW2t6IHRaYTFbakklSwRuD/PpCUiZPU7bSn",
-	"ucUkxff49bIH44fgHTphaPYQNOkBBSl/3esN/mMHK+mjRTZkg1jvoIFsZiVbVC4OayTlO2UFB1beKa2C",
-	"3iBUYFPsa0QaoQKnB4QG+pyxAjZbHHRKLWNIDusEN0gwTVWG/rfrGBewHwIa21ks8AnpOwfxao2qtRx6",
-	"PWL7DgFf8n7IYKqAkIN3jLkVf6xWfxF5Sr+Nd4IuE9Mh9NboRKx+4cRuf5I1kA9IYkuKAZlTV2Y4FrJu",
-	"k+s9WPz6BY0U/POi79xO97ZVhK8RWWCq4M+fzekBaYekMJNI7gKTMz+SdqxNibyE1YOPhewFagVGC248",
-	"jYvOVkvm2nkatEBTDNVC4CnPhUS2XTRzXH+Av9CSChhNJCvjQyq9VHer2ZqbKNtj59ObdbLOXLciofTU",
-	"us6/XfK/UZR2rYoh1ai0MallKgWn2lNQBWKlT8luipfVzf0dVLBD4pLl+mp1tUqV+YBOBwsN/J5NFQQt",
-	"20y3lnlU2bBZOrr/UCI5Vlr1liVd+9mzjECZ111b6D+e+0+l5WkPvxJ20MAv9SxA9RxSz9IzVZ8KPojF",
-	"9HxxuL+tVl+6j6xh6ccS5mG/69PlnrdCE+lx8U6iMcjcxb4fFeVGYvteJ6cqic17DI611UdFKkrw4wdH",
-	"ucgMg+clWUdJI46MpKxjJFGejjt4SvTNxO89X478oFW3vh2/NINPt77I9Gu0hC00QhGn5fF/MA9DqAXb",
-	"uc42/63I+Yi/OJJpOtWGvPAnqvD0nNaUs3qWa4jUHzSBm7rG//UQeryyvt5dw/Q8fQsAAP//v9vjfacH",
-	"AAA=",
+	"H4sIAAAAAAAC/8RWTW/jNhD9KwTbQwsIkbcfF9+ybbYIGqBpvT0tcqCpscWtRDIzw3SNQP+9IOnIsi0l",
+	"ci97k8nhvDd8wzd+ltq13lmwTHL5LL1C1QIDpl+/KIatw138roA0Gs/GWbmUH0zDgGK9E/BFaRatYl0L",
+	"Z4V+OVJIEwMfA6QfVrUgl3KwTbqGVsXUvPNxjxiN3cquK+SviuEDuvYc+EZhY4BYVIpBbByKf2uja4FA",
+	"oWESVLvQVGINAsE7ZKgmmFQvEEMmG4et4v2uLCaY/W3ZNP+bmnU8k17GuZBfpHRn/oHXNEtqGbsVgwDx",
+	"3erPO3F3+/uN8IoZ0H4/Ra2HeF3Ee7WFO9MaPqeSlklwDcKGdg0o3EYYhpZiDynh1RYm0JuUcQTZWIYt",
+	"YA/9x2ZDMIK98qDNxkCGj0gvHNhFYSpDvlG7SWVczvsGgxVHhea/G+Ks6Bjiy95rl70Ka335a6XBqQns",
+	"o4hpBl0hEcg7S5Cs46fF4gbRYfzWzjLYJIXyvjFaRV7lZ4rkngdJPToPyCanaIEo9sFovfsVt/4MmjP+",
+	"cc239kk1phIIjwGIZVfIn782pxXgE6CARCJuZ5iU+SMqS0rnyFNY1bqQyZ6gFnKo+tlmtW/CN3zjhOdI",
+	"IlONLtNx1719JYUk0AEN71ax9Fzde0VGXweu+5uPZ9Zx9cC1Zvb5To3duPMe/w1YKFuJ4JP9Kq3jlYkY",
+	"HGuPQYVkw01Mdp13SVzf38pCPgFSzvLuanG1iJU5D1Z5I5fyx7RUSK+4TnRLPkiVFrZjNvMXcEBLQonG",
+	"EEd/OzqWEDDxuq0y/Y/H+8NR/OlZfouwkUv5TXkY2OUhpOwnZlfMis2zZUZw/x9gRuzQhObw6AfJnNzJ",
+	"BGcEHsbOzOD9oOgeTizsh8XiIqdI8yt+jGHuX3o5fOaH96EQ1W7UMYLWQLQJTbMTmFoKqqme6opou1MM",
+	"+trK3puzJ759oDfOxNA7GhvpwLHZAwEKYwmQhcP+NQ6JnvX+vaPT5t+79ntX7S7SYPbV54H1GAxCJZeM",
+	"Abpx+V/RQyMohupQZ5X+UvCxxBdK0nVDl0xPf+CPnx5im1KaI9kXAjZ7d6RlWcIX1foGrowrn97J7qH7",
+	"LwAA///Z0CYf4QsAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

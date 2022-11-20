@@ -15,6 +15,12 @@ paths:
     get:
       description: Returns a list of transactions
       parameters:
+        - $ref: '#/components/parameters/DateFrom'
+        - $ref: '#/components/parameters/DateUntil'
+        - $ref: '#/components/parameters/Category'
+        - $ref: '#/components/parameters/Subcategory'
+        - $ref: '#/components/parameters/DescrLike'
+        - $ref: '#/components/parameters/State'
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
       responses:
@@ -70,6 +76,50 @@ components:
             type: string
 
   parameters:
+    DateFrom:
+      name: dateFrom
+      in: query
+      description: Earliest date for which results should be reported
+      schema:
+        type: string
+        format: date
+      
+    DateUntil:
+      name: dateUntil
+      in: query
+      description: Earliest date for which results should not be reported
+      schema:
+        type: string
+        format: date
+      
+    DescrLike:
+      name: descrLike
+      in: query
+      description: Filter by matching description (SQL LIKE pattern)
+      schema:
+        type: string
+      
+    Category:
+      name: category
+      in: query
+      description: Filter by exact match on category
+      schema:
+        type: string
+      
+    Subcategory:
+      name: subcategory
+      in: query
+      description: Filter by exact match on subcategory
+      schema:
+        type: string
+      
+    State:
+      name: state
+      in: query
+      description: Filter by exact match on state
+      schema:
+        type: string
+      
     PageLimit:
       name: limit
       in: query

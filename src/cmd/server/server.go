@@ -30,14 +30,20 @@ func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsPar
 	if err != nil {
 		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
-	query := "state is null order by date desc"
-	if params.Limit != nil {
-		query = fmt.Sprintf("%s limit %d", query, *params.Limit)
+	query := account.QuerySpec{
+		DescrLike:   params.DescrLike,
+		Category:    params.Category,
+		Subcategory: params.Subcategory,
+		State:       params.State,
+		Limit:       params.Limit,
+		Offset:      params.Offset,
 	}
-	if params.Offset != nil {
-		query = fmt.Sprintf("%s offset %d", query, *params.Offset)
+	if params.DateFrom != nil {
+		query.DateFrom = &params.DateFrom.Time
 	}
-	log.Println("GetTransactions %s", query)
+	if params.DateUntil != nil {
+		query.DateUntil = &params.DateUntil.Time
+	}
 	ch, err := acct.Query(query)
 	if err != nil {
 		return ctx.String(http.StatusInternalServerError, fmt.Sprintf("error querying db: %v", err))
