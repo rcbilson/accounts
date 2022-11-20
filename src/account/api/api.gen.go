@@ -181,6 +181,9 @@ type ClientInterface interface {
 	PostTransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostTransactions(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTransactionsId request
+	DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetTransactions(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -209,6 +212,18 @@ func (c *Client) PostTransactionsWithBody(ctx context.Context, contentType strin
 
 func (c *Client) PostTransactions(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostTransactionsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTransactionsIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -418,6 +433,40 @@ func NewPostTransactionsRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
+// NewDeleteTransactionsIdRequest generates requests for DeleteTransactionsId
+func NewDeleteTransactionsIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/transactions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -468,6 +517,9 @@ type ClientWithResponsesInterface interface {
 	PostTransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error)
 
 	PostTransactionsWithResponse(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error)
+
+	// DeleteTransactionsId request
+	DeleteTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteTransactionsIdResponse, error)
 }
 
 type GetTransactionsResponse struct {
@@ -516,6 +568,28 @@ func (r PostTransactionsResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteTransactionsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTransactionsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTransactionsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetTransactionsWithResponse request returning *GetTransactionsResponse
 func (c *ClientWithResponses) GetTransactionsWithResponse(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*GetTransactionsResponse, error) {
 	rsp, err := c.GetTransactions(ctx, params, reqEditors...)
@@ -540,6 +614,15 @@ func (c *ClientWithResponses) PostTransactionsWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParsePostTransactionsResponse(rsp)
+}
+
+// DeleteTransactionsIdWithResponse request returning *DeleteTransactionsIdResponse
+func (c *ClientWithResponses) DeleteTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteTransactionsIdResponse, error) {
+	rsp, err := c.DeleteTransactionsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTransactionsIdResponse(rsp)
 }
 
 // ParseGetTransactionsResponse parses an HTTP response from a GetTransactionsWithResponse call
@@ -608,6 +691,32 @@ func ParsePostTransactionsResponse(rsp *http.Response) (*PostTransactionsRespons
 	return response, nil
 }
 
+// ParseDeleteTransactionsIdResponse parses an HTTP response from a DeleteTransactionsIdWithResponse call
+func ParseDeleteTransactionsIdResponse(rsp *http.Response) (*DeleteTransactionsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTransactionsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -616,6 +725,9 @@ type ServerInterface interface {
 
 	// (POST /transactions)
 	PostTransactions(ctx echo.Context) error
+	// Deletes a transaction by ID
+	// (DELETE /transactions/{id})
+	DeleteTransactionsId(ctx echo.Context, id string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -703,6 +815,24 @@ func (w *ServerInterfaceWrapper) PostTransactions(ctx echo.Context) error {
 	return err
 }
 
+// DeleteTransactionsId converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTransactionsId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteTransactionsId(ctx, id)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -733,27 +863,30 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/transactions", wrapper.GetTransactions)
 	router.POST(baseURL+"/transactions", wrapper.PostTransactions)
+	router.DELETE(baseURL+"/transactions/:id", wrapper.DeleteTransactionsId)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7xWTW/jNhD9KwTbQwsIkbcfF9+ybbYIGqBpvT0tcqCpkcWtRDIzo3SNQP+9IGnLsi3F",
-	"clH0ZpPDeW/4hm/0KrVrvLNgmeTyVXqFqgEGjP9+Ugwbh9vwuwDSaDwbZ+VSfjA1A4r1VsAXpVk0inUl",
-	"nBV6fySTJgQ+txD/WNWAXMrBNukKGhVS89aHPWI0diO7LpM/K4YP6Jpz4DuFtQFiUSgGUToUf1dGVwKB",
-	"2ppJUOXauhBrEAjeIUMxwaTYQwyZlA4bxbtdmU0w+9Oyqf81Net4Jr2EcyW/QOnB/AVvaRbVMnYjBgHi",
-	"m9XvD+Lh/tc74RUzoP12iloP8baIj2oDD6YxfE4lLpPgCoRtmzWgcKUwDA2FHlLCqw1MoNcx4wiysQwb",
-	"wB76t7IkGMFeedCmNJDgA9KeA7sgTGHI12o7qYxLeS8wWHFQaP67IU6KjiHu99667FW71te/VhqcmsA+",
-	"iphm0GUSgbyzBNE6flgs7hAdht/aWQYbpVDe10arwCv/TIHc6yDp1wilXMqv8oMp5WmX8pQtAh0Xd29f",
-	"VG0KgfDcArHsMvnj/wa+AnwBFLDb399QvIKegkfnAdmkm2mAKLT3qIy7Fbf+DDqW8hGVJaUT3Gkq1bg2",
-	"lXaSKZPDZjjbLHa9ecFOToodSWSK0WU6bsaLZYYjoFs0vF2F+0vVvVdk9G3LVa9TOLMOqweuFbNPwhhb",
-	"uvPW/wVYKFuI1kdXVlqHKxMhONQegjLJhuuQ7Dbtkrh9vJeZfAGklOXdzeJmESpzHqzyRi7l93Epk15x",
-	"FenmfJAqLmzG3OcP4BYtCSVqQxxs7+hYRMDI675I9D8e7w8n9Kfxrj2E5P0g7bJZsWnkzAjuPw1mxA69",
-	"aQ6Pfr7MyR29cUbgYRrNDN7Nj+7pxNm+Wyyu8pU41i4ZzPCZH96HQlTbUdtptQaisq3rrcDYUlBM9VSX",
-	"BTeeYtDXlveWnRz08oHeZiND72hs0gOHZm8JUBhLgCwc9q9xSPSs9x8dnTb/zuPfu2L7n3n70dWnOfbc",
-	"GoRCLhlb6Mblf0MPjaAYikOdRfzS4GOJr5Sk64YuGZ/+wB8/PYU2pTiMki+0WO/ckZZ5Dl9U42u4MS5/",
-	"eSe7p+6fAAAA///3x1Sg+AsAAA==",
+	"H4sIAAAAAAAC/7xWUW/jNgz+K4K2hw0w6tx2e8lbb+0NwQqsW25Phz4oEp3oZksqRXUNCv/3QZLj2InT",
+	"pMN2b4lEkx/5UR/5wqVtnDVgyPP5C3cCRQMEmP79LAjWFrfxtwIvUTvS1vA5/6hrAmSrLYNnIYk1guSG",
+	"WcPk7pOC62j4GCD9MaIBPueDay830IjomrYu3nlCbda8bQt+Iwg+om2OA98KrDV4YkoQsMoi+3uj5YYh",
+	"+FCTZ35jQ63YChiCs0igTiBRuxBDJJXFRlB3y4sTyP40pOt/Dc1YuhBejvNGfBHSnf4LXuMssaXNmg0M",
+	"2HfL3+/Y3eLXW+YEEaD5/hS0PsTrJN6LNdzpRtMxlHTsGW2AmdCsAJmtmCZofOwhwZxYw4nodfI4EVkb",
+	"gjVgH/q3qvIwEXvpQOpKQw4fI+0wkI3EKO1dLbYnmbHZ7xkES4oMXf5uPGVGpyLu7l4r9jKs5Ntfqx98",
+	"dSL2yOI0grbgCN5Z4yFJx/vZ7BbRYvwtrSEwiQrhXK2liLjKLz6Cexk4/Rah4nP+TbkXpTLf+jJ7S4HG",
+	"yS3Mk6i1YgiPATzxtuA/fbXgS8AnQAbd/a5CqQQ9BIfWAZLOlWnA+9jekzR2J3b1BWRK5RMK44XM4Q5d",
+	"icaGnNqBp4IPm+HoUnW9eUZODpKdcKTV5LEfN+PZNOMnIANq2i5j/XJ2H4TX8jrQpucpfrOKp3usGyKX",
+	"idGmsset/wsQE0ax4JIqCyljyVg0jrlHo4KTpjo6u863nl3fL3jBnwB99vLuanY1i5lZB0Y4zef8x3RU",
+	"cCdok+CWtKcqHayn1OcPoIDGM8Fq7SnK3uizFAETroXK8D+N74cT+vN01+5Nyn6QtsVFtnnkXGDcrwYX",
+	"2A616RIc/Xy5xHfSxgsM99PoQuNufrQPB8r2w2z2Jl1JY+2cwAyf+f59CESxnZSdICV4X4W63jJMLQXq",
+	"VE+1RVTjUwj63MpesrOCnv+gl9mE0Fk/NemBYrMHD8i08YDELPavcQj0qPfvrT9s/k7jP1i1/c+0fVT6",
+	"PMceg0ZQfE4YoJ2m/xU+JIIgUPs8Vdo0aEzxGylJyEYSU75o1WYoNUztGvk8Vt9rs65HCNhK+AjRJGiL",
+	"G+ZDLGBaesYs3CQvQx4W6liGDkbyzUETxtWqg9mtGVE291uGVvyw7q8tG8dP8v1x+g6oi6nyKKtEqOn/",
+	"XwmCgWcHMtI+WAtC04g4Dbt6+nHvx9VscZO97SZhqutgBn5+iHn7tHDkogesuwno52UJz6JxNVxpWz69",
+	"4+1D+08AAAD//+8s3P/cDQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

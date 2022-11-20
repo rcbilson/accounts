@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -82,7 +81,6 @@ func emptyIfNil(s *string) string {
 
 // (POST /transactions)
 func (s *Server) PostTransactions(ctx echo.Context) error {
-	log.Println("PostTransactions", ctx.Request().Body)
 	var t api.Transaction
 	err := ctx.Bind(&t)
 	if err != nil {
@@ -93,35 +91,58 @@ func (s *Server) PostTransactions(ctx echo.Context) error {
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
-        err = acct.BeginUpdate()
+	err = acct.BeginUpdate()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
 	}
-        defer acct.AbortUpdate()
+	defer acct.AbortUpdate()
 
 	var r account.Record
 	if t.Date != nil {
-                r.Date = t.Date.Time
-        }
+		r.Date = t.Date.Time
+	}
 	r.Id = emptyIfNil(t.Id)
 	r.Descr = emptyIfNil(t.Description)
 	r.Amount = emptyIfNil(t.Amount)
 	r.Category = emptyIfNil(t.Category)
 	r.Subcategory = emptyIfNil(t.Subcategory)
 
-        if r.Id == "" {
-                _, err = acct.Insert(&r)       
-        } else {
-                _, err = acct.Update(&r)
-        }
+	if r.Id == "" {
+		_, err = acct.Insert(&r)
+	} else {
+		_, err = acct.Update(&r)
+	}
 	if err != nil {
 		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error on update/insert: %v", err))
 	}
-        err = acct.CompleteUpdate()
+	err = acct.CompleteUpdate()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
 	}
 
+	return ctx.NoContent(http.StatusNoContent)
+}
+
+// (DELETE /transactions/id)
+func (s *Server) DeleteTransactionsId(ctx echo.Context, id string) error {
+	acct, err := account.Open()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+	}
+	err = acct.BeginUpdate()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+	}
+	defer acct.AbortUpdate()
+
+	_, err = acct.Delete(id)
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error deleting transaction: %v", err))
+	}
+	err = acct.CompleteUpdate()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+	}
 	return ctx.NoContent(http.StatusNoContent)
 }
 
