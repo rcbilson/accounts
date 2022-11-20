@@ -25,6 +25,8 @@ func main() {
 	category := flag.String("category", "", "Filter by exact match on category")
 	subcategory := flag.String("subcategory", "", "Filter by exact match on subcategory")
 	state := flag.String("state", "", "Filter by exact match on state")
+	limit := flag.Int("limit", 0, "Maximum number of transactions to return")
+	offset := flag.Int("offset", 0, "Number of transactions to skip before returning results")
 	flag.Parse()
 
 	var query account.QuerySpec
@@ -41,7 +43,11 @@ func main() {
 			query.Subcategory = subcategory
 		} else if f.Name == "state" {
 			query.State = state
-		}
+		} else if f.Name == "limit" {
+                        query.Limit = limit
+                } else if f.Name == "offset" {
+                        query.Offset = offset
+                }
 	})
 
 	acct, err := account.Open()
