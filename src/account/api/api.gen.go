@@ -28,7 +28,7 @@ const (
 
 // Error defines model for Error.
 type Error struct {
-	Message *string `json:"message,omitempty"`
+	Message string `json:"message"`
 }
 
 // Transaction defines model for Transaction.
@@ -100,6 +100,9 @@ type GetTransactionsParams struct {
 
 // PostTransactionsJSONRequestBody defines body for PostTransactions for application/json ContentType.
 type PostTransactionsJSONRequestBody = Transaction
+
+// PostTransactionsIdJSONRequestBody defines body for PostTransactionsId for application/json ContentType.
+type PostTransactionsIdJSONRequestBody = Transaction
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -184,6 +187,11 @@ type ClientInterface interface {
 
 	// DeleteTransactionsId request
 	DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostTransactionsId request with any body
+	PostTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostTransactionsId(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetTransactions(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -224,6 +232,30 @@ func (c *Client) PostTransactions(ctx context.Context, body PostTransactionsJSON
 
 func (c *Client) DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteTransactionsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostTransactionsIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostTransactionsId(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostTransactionsIdRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -467,6 +499,53 @@ func NewDeleteTransactionsIdRequest(server string, id string) (*http.Request, er
 	return req, nil
 }
 
+// NewPostTransactionsIdRequest calls the generic PostTransactionsId builder with application/json body
+func NewPostTransactionsIdRequest(server string, id string, body PostTransactionsIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostTransactionsIdRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostTransactionsIdRequestWithBody generates requests for PostTransactionsId with any type of body
+func NewPostTransactionsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/transactions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -520,6 +599,11 @@ type ClientWithResponsesInterface interface {
 
 	// DeleteTransactionsId request
 	DeleteTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteTransactionsIdResponse, error)
+
+	// PostTransactionsId request with any body
+	PostTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error)
+
+	PostTransactionsIdWithResponse(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error)
 }
 
 type GetTransactionsResponse struct {
@@ -590,6 +674,28 @@ func (r DeleteTransactionsIdResponse) StatusCode() int {
 	return 0
 }
 
+type PostTransactionsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostTransactionsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostTransactionsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetTransactionsWithResponse request returning *GetTransactionsResponse
 func (c *ClientWithResponses) GetTransactionsWithResponse(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*GetTransactionsResponse, error) {
 	rsp, err := c.GetTransactions(ctx, params, reqEditors...)
@@ -623,6 +729,23 @@ func (c *ClientWithResponses) DeleteTransactionsIdWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseDeleteTransactionsIdResponse(rsp)
+}
+
+// PostTransactionsIdWithBodyWithResponse request with arbitrary body returning *PostTransactionsIdResponse
+func (c *ClientWithResponses) PostTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error) {
+	rsp, err := c.PostTransactionsIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostTransactionsIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostTransactionsIdWithResponse(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error) {
+	rsp, err := c.PostTransactionsId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostTransactionsIdResponse(rsp)
 }
 
 // ParseGetTransactionsResponse parses an HTTP response from a GetTransactionsWithResponse call
@@ -717,6 +840,32 @@ func ParseDeleteTransactionsIdResponse(rsp *http.Response) (*DeleteTransactionsI
 	return response, nil
 }
 
+// ParsePostTransactionsIdResponse parses an HTTP response from a PostTransactionsIdWithResponse call
+func ParsePostTransactionsIdResponse(rsp *http.Response) (*PostTransactionsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostTransactionsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -728,6 +877,9 @@ type ServerInterface interface {
 	// Deletes a transaction by ID
 	// (DELETE /transactions/{id})
 	DeleteTransactionsId(ctx echo.Context, id string) error
+
+	// (POST /transactions/{id})
+	PostTransactionsId(ctx echo.Context, id string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -833,6 +985,24 @@ func (w *ServerInterfaceWrapper) DeleteTransactionsId(ctx echo.Context) error {
 	return err
 }
 
+// PostTransactionsId converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTransactionsId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostTransactionsId(ctx, id)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -864,29 +1034,30 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/transactions", wrapper.GetTransactions)
 	router.POST(baseURL+"/transactions", wrapper.PostTransactions)
 	router.DELETE(baseURL+"/transactions/:id", wrapper.DeleteTransactionsId)
+	router.POST(baseURL+"/transactions/:id", wrapper.PostTransactionsId)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7xWUW/jNgz+K4K2hw0w6tx2e8lbb+0NwQqsW25Phz4oEp3oZksqRXUNCv/3QZLj2InT",
-	"pMN2b4lEkx/5UR/5wqVtnDVgyPP5C3cCRQMEmP79LAjWFrfxtwIvUTvS1vA5/6hrAmSrLYNnIYk1guSG",
-	"WcPk7pOC62j4GCD9MaIBPueDay830IjomrYu3nlCbda8bQt+Iwg+om2OA98KrDV4YkoQsMoi+3uj5YYh",
-	"+FCTZ35jQ63YChiCs0igTiBRuxBDJJXFRlB3y4sTyP40pOt/Dc1YuhBejvNGfBHSnf4LXuMssaXNmg0M",
-	"2HfL3+/Y3eLXW+YEEaD5/hS0PsTrJN6LNdzpRtMxlHTsGW2AmdCsAJmtmCZofOwhwZxYw4nodfI4EVkb",
-	"gjVgH/q3qvIwEXvpQOpKQw4fI+0wkI3EKO1dLbYnmbHZ7xkES4oMXf5uPGVGpyLu7l4r9jKs5Ntfqx98",
-	"dSL2yOI0grbgCN5Z4yFJx/vZ7BbRYvwtrSEwiQrhXK2liLjKLz6Cexk4/Rah4nP+TbkXpTLf+jJ7S4HG",
-	"yS3Mk6i1YgiPATzxtuA/fbXgS8AnQAbd/a5CqQQ9BIfWAZLOlWnA+9jekzR2J3b1BWRK5RMK44XM4Q5d",
-	"icaGnNqBp4IPm+HoUnW9eUZODpKdcKTV5LEfN+PZNOMnIANq2i5j/XJ2H4TX8jrQpucpfrOKp3usGyKX",
-	"idGmsset/wsQE0ax4JIqCyljyVg0jrlHo4KTpjo6u863nl3fL3jBnwB99vLuanY1i5lZB0Y4zef8x3RU",
-	"cCdok+CWtKcqHayn1OcPoIDGM8Fq7SnK3uizFAETroXK8D+N74cT+vN01+5Nyn6QtsVFtnnkXGDcrwYX",
-	"2A616RIc/Xy5xHfSxgsM99PoQuNufrQPB8r2w2z2Jl1JY+2cwAyf+f59CESxnZSdICV4X4W63jJMLQXq",
-	"VE+1RVTjUwj63MpesrOCnv+gl9mE0Fk/NemBYrMHD8i08YDELPavcQj0qPfvrT9s/k7jP1i1/c+0fVT6",
-	"PMceg0ZQfE4YoJ2m/xU+JIIgUPs8Vdo0aEzxGylJyEYSU75o1WYoNUztGvk8Vt9rs65HCNhK+AjRJGiL",
-	"G+ZDLGBaesYs3CQvQx4W6liGDkbyzUETxtWqg9mtGVE291uGVvyw7q8tG8dP8v1x+g6oi6nyKKtEqOn/",
-	"XwmCgWcHMtI+WAtC04g4Dbt6+nHvx9VscZO97SZhqutgBn5+iHn7tHDkogesuwno52UJz6JxNVxpWz69",
-	"4+1D+08AAAD//+8s3P/cDQAA",
+	"H4sIAAAAAAAC/9RWUW/jNgz+K4K2hw0wzrnt9pK33tobghVYt9yeij4oMpPoZks6kuoaFP7vg6TUsRMn",
+	"TYtuwN4SixI/8iM/8lFq13hnwTLJ6aP0ClUDDJj+/awYVg438XcFpNF4Ns7KqfxkagYUi42AB6VZNIr1",
+	"Wjgr9NOVQppo+DVA+mNVA3Iqe8ek19Co+DRvfDwjRmNXsm0LeakYPqFrDh1fKawNEItKMYilQ/H32ui1",
+	"QKBQMwlau1BXYgECwTtkqI4gqZ5c9JEsHTaKt6eyOILsT8umfjU06/hMeNnPC/FFSNfmLzjFWWLL2JXo",
+	"GYjv5r9fi+vZr1fCK2ZA+/0xaJ2L0yTeqBVcm8bwIZT0mQSvQdjQLACFWwrD0FCsISW8WsER73V6ccSz",
+	"sQwrwM71b8slwYjvuQdtlgay++jpCQO7SExlyNdqc5QZl999BsGcI0Pn9w1xZnTM49PZqWTPw0K/vFup",
+	"d+uI74HFcQRtIRHIO0uQpOPDZHKF6DD+1s4y2ESF8r42WkVc5ReK4B57j36LsJRT+U25E6Uyn1KZX0uO",
+	"hsHN7L2qTSUQvgYglm0hf/rPnM8B7wEFbM+fMpRS0EHw6Dwgm5yZBohieY/SGIMwCJWc3naGd12fu8UX",
+	"0CnCz6gsKZ1R7HtQjQs54j0HhezXyMFhtS3ZZ1RmLwcjD5lq9DMNa/Qw+r0w4xXQAQ1v5jGtObqPioy+",
+	"CLzu6It3FvHrDuua2We+jF26w474BVgoW4ngk1grrWPKRDSOsUejQrLhOj52kU9JXNzMZCHvASm/8v7d",
+	"5N0kRuY8WOWNnMof06dCesXrBLfkHVXpw2pMlP4ADmhJKFEb4qiGg2vJAyZcsyrD/zw87w/u2/Fi3pmU",
+	"3Xxti7Ns8yQ6w7jbGM6w7UvWOTi6sXPO20kyzzDcDakzjbdjpb3bE7wfJpMXyU2ads/pTr/Nd/2hENVm",
+	"VI2C1kC0DHW9EZhKCqpjNdUWUaSPIehiKzslz8L6/IVOfRNC72hsAQCOxR4IUBhLgCwcdt3YB3pQ+zeO",
+	"9ot/K/0fXbV5M8kfpH4ozYwB2nH6T/ChERRDtYuzSgsIDyl+ISUJ2UBiykdTtRlKDWMrSP4es0/GruoB",
+	"ArFQFCHaBG12KSjEBKZdaMjCZXqlz8OsOpShvUl9uVeEcePawtxuH1E2d8uHqeR+3k/tIIct+eEwfA+8",
+	"9VnlUbZUoeZ/f1MIFh486Eh7b1sITaPiNNzmk4a1Hze22aU8q4te1Tuv5Cz7ejvO/gfd+6Yt21tsUsp7",
+	"K83tXUwJpbUy8xGw3i40NC1LeFCNr+GdceX9e9netf8EAAD//znG1tPCDwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

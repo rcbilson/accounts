@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/deepmap/oapi-codegen/examples/petstore-expanded/echo/api/models"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	oapifilter "github.com/getkin/kin-openapi/openapi3filter"
@@ -27,7 +26,7 @@ func NewServer() *Server {
 // This function wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
 func sendError(ctx echo.Context, code int, message string) error {
-	sendErr := models.Error{
+	sendErr := api.Error{
 		Message: message,
 	}
 	err := ctx.JSON(code, sendErr)
@@ -80,13 +79,7 @@ func emptyIfNil(s *string) string {
 }
 
 // (POST /transactions)
-func (s *Server) PostTransactions(ctx echo.Context) error {
-	var t api.Transaction
-	err := ctx.Bind(&t)
-	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
-	}
-
+func (s *Server) insertOrUpdate(ctx echo.Context, t api.Transaction) error {
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -121,6 +114,31 @@ func (s *Server) PostTransactions(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+// (POST /transactions)
+func (s *Server) PostTransactions(ctx echo.Context) error {
+	var t api.Transaction
+	err := ctx.Bind(&t)
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
+	}
+	return s.insertOrUpdate(ctx, t)
+}
+
+// (POST /transactions/id)
+func (s *Server) PostTransactionsId(ctx echo.Context, id string) error {
+	var t api.Transaction
+	err := ctx.Bind(&t)
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
+	}
+	if t.Id == nil || *t.Id == "" {
+		t.Id = &id
+	} else if *t.Id != id {
+		return sendError(ctx, http.StatusBadRequest, "ID must be empty or equal to path ID")
+	}
+	return s.insertOrUpdate(ctx, t)
 }
 
 // (DELETE /transactions/id)

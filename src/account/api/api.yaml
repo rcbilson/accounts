@@ -52,7 +52,27 @@ paths:
           $ref: '#/components/responses/400Error'
 
   /transactions/{id}:
-   delete:
+    post:
+      description: Lets a user update a transaction
+      parameters:
+        - name: id
+          in: path
+          description: ID of transaction to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '200':
+          description: Successfully updated the transaction
+        '400':
+          $ref: '#/components/responses/400Error'
+    delete:
       summary: Deletes a transaction by ID
       description: deletes a single transaction based on the ID supplied
       parameters:
@@ -81,6 +101,8 @@ components:
   schemas:
     Error:
       type: object
+      required:
+        - message
       properties:
         message:
           type: string
