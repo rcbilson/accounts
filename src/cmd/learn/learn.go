@@ -31,7 +31,7 @@ func main() {
 
 	acct.ResetLearning()
 
-	ch, err := acct.Query("")
+	ch, err := acct.Query(account.QuerySpec{})
 	check(err)
 
 	err = acct.BeginUpdate()

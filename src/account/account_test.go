@@ -29,7 +29,7 @@ CREATE TABLE xact (
 	return acct
 }
 
-func materializeQuery(t *testing.T, acct *Context, query string) []Record {
+func materializeQuery(t *testing.T, acct *Context, query QuerySpec) []Record {
 	ch, err := acct.Query(query)
 	assert.NilError(t, err)
 
@@ -102,16 +102,16 @@ func TestErrors(t *testing.T) {
 	testRecord := Record{"", time.Now(), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
 	s, err := acct.Insert(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
-        assert.ErrorContains(t, err, "without beginning an update")
+	assert.ErrorContains(t, err, "without beginning an update")
 
 	testRecord.Id = "17"
 	s, err = acct.Update(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
-        assert.ErrorContains(t, err, "without beginning an update")
+	assert.ErrorContains(t, err, "without beginning an update")
 
 	s, err = acct.Delete("17")
 	assert.Equal(t, s, Stats{0, 0, 0})
-        assert.ErrorContains(t, err, "without beginning an update")
+	assert.ErrorContains(t, err, "without beginning an update")
 
 	err = acct.BeginUpdate()
 	assert.NilError(t, err)
@@ -119,12 +119,12 @@ func TestErrors(t *testing.T) {
 
 	s, err = acct.Insert(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
-        assert.ErrorContains(t, err, "with rowid")
+	assert.ErrorContains(t, err, "with rowid")
 
-        testRecord.Id = ""
+	testRecord.Id = ""
 	s, err = acct.Update(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
-        assert.ErrorContains(t, err, "without rowid")
+	assert.ErrorContains(t, err, "without rowid")
 }
 
 func TestModifications(t *testing.T) {
@@ -135,7 +135,7 @@ func TestModifications(t *testing.T) {
 	testRecord := Record{"", time.Now(), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
 	testInsertion(t, acct, &testRecord)
 
-	recs := materializeQuery(t, acct, "")
+	recs := materializeQuery(t, acct, QuerySpec{})
 	assert.Equal(t, len(recs), 1)
 	assert.Assert(t, recs[0].Id != "")
 	assertRecordsEqualNoId(t, recs[0], testRecord)
@@ -145,7 +145,7 @@ func TestModifications(t *testing.T) {
 	updateRecord := Record{recs[0].Id, time.Now(), "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"}
 	testUpdate(t, acct, &updateRecord)
 
-	recs = materializeQuery(t, acct, "")
+	recs = materializeQuery(t, acct, QuerySpec{})
 	assert.Equal(t, len(recs), 1)
 	assertRecordsEqual(t, recs[0], updateRecord)
 
@@ -153,6 +153,63 @@ func TestModifications(t *testing.T) {
 
 	testDelete(t, acct, updateRecord.Id)
 
-	recs = materializeQuery(t, acct, "")
+	recs = materializeQuery(t, acct, QuerySpec{})
 	assert.Equal(t, len(recs), 0)
+}
+
+func tm(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic("bad time constant")
+	}
+	return t
+}
+
+func TestQuery(t *testing.T) {
+	acct := setupTest(t)
+
+	date1 := tm("2022-11-01")
+	date2 := tm("2022-11-02")
+	date3 := tm("2022-11-03")
+
+	testRecords := []Record{
+		{"", date1, "Pen Island", "-75.45", "Frivolities", "Tchotchkes"},
+		{"", date2, "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"},
+		{"", date2, "Qwik Stop", "17.42", "Necessities", "Wine"},
+		{"", date3, "Dewey Cheatham & Howe", "17.42", "Legalities", "Success Fees"}}
+
+	for _, r := range testRecords {
+		testInsertion(t, acct, &r)
+	}
+
+	recs := materializeQuery(t, acct, QuerySpec{})
+	assert.Equal(t, len(recs), 4)
+
+	necessities := "Necessities"
+	recs = materializeQuery(t, acct, QuerySpec{Category: &necessities})
+	assert.Equal(t, len(recs), 2)
+
+	legalities := "Legalities"
+	recs = materializeQuery(t, acct, QuerySpec{Category: &legalities})
+	assert.Equal(t, len(recs), 1)
+
+	recs = materializeQuery(t, acct, QuerySpec{Subcategory: &legalities})
+	assert.Equal(t, len(recs), 0)
+
+	icecream := "Ice Cream"
+	recs = materializeQuery(t, acct, QuerySpec{Subcategory: &icecream})
+	assert.Equal(t, len(recs), 1)
+
+	recs = materializeQuery(t, acct, QuerySpec{Category: &necessities, Subcategory: &icecream})
+	assert.Equal(t, len(recs), 1)
+
+	qwik := "qwik%"
+	recs = materializeQuery(t, acct, QuerySpec{DescrLike: &qwik})
+	assert.Equal(t, len(recs), 2)
+
+	recs = materializeQuery(t, acct, QuerySpec{DateFrom: &date2})
+	assert.Equal(t, len(recs), 3)
+
+	recs = materializeQuery(t, acct, QuerySpec{DateUntil: &date2})
+	assert.Equal(t, len(recs), 1)
 }

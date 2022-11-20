@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 )
 
 func maybeString(maybe sql.NullString) string {
@@ -14,12 +15,69 @@ func maybeString(maybe sql.NullString) string {
 	}
 }
 
-func (ctx *Context) Query(where string) (<-chan *Record, error) {
-	query := "SELECT rowid, date, descr, amount, category, subcategory FROM xact"
-	if where != "" {
-		query = fmt.Sprintf("%s WHERE %s", query, where)
+type QuerySpec struct {
+	DateFrom    *time.Time
+	DateUntil   *time.Time
+	DescrLike   *string
+	Category    *string
+	Subcategory *string
+	State       *string
+	Limit       *int
+	Offset      *int
+}
+
+const baseQuery = "SELECT rowid, date, descr, amount, category, subcategory FROM xact"
+const orderBy = "ORDER BY date DESC"
+
+func buildQuery(spec QuerySpec) (string, []interface{}) {
+	expr := make([]string, 0)
+	params := make([]interface{}, 0)
+	if spec.DateFrom != nil {
+		expr = append(expr, "date >= ?")
+		params = append(params, spec.DateFrom.Format("2006-01-02"))
 	}
-	rows, err := ctx.db.Query(query)
+	if spec.DateUntil != nil {
+		expr = append(expr, "date < ?")
+		params = append(params, spec.DateUntil.Format("2006-01-02"))
+	}
+	if spec.DescrLike != nil {
+		expr = append(expr, "descr like ?")
+		params = append(params, *spec.DescrLike)
+	}
+	if spec.Category != nil {
+		expr = append(expr, "category = ?")
+		params = append(params, *spec.Category)
+	}
+	if spec.Subcategory != nil {
+		expr = append(expr, "subcategory = ?")
+		params = append(params, *spec.Subcategory)
+	}
+	if spec.State != nil {
+		expr = append(expr, "state = ?")
+		params = append(params, *spec.State)
+	}
+	query := baseQuery
+	if len(expr) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, expr[0])
+		for _, e := range expr[1:] {
+			query = fmt.Sprintf("%s AND %s", query, e)
+		}
+	}
+        query = fmt.Sprintf("%s %s", query, orderBy)
+	if spec.Limit != nil {
+		query = fmt.Sprintf("%s LIMIT ?", query)
+		params = append(params, *spec.Limit)
+	}
+	if spec.Offset != nil {
+		query = fmt.Sprintf("%s OFFSET ?", query)
+		params = append(params, *spec.Offset)
+	}
+	return query, params
+}
+
+func (ctx *Context) Query(spec QuerySpec) (<-chan *Record, error) {
+	query, params := buildQuery(spec)
+	rows, err := ctx.db.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}

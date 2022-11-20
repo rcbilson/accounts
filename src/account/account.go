@@ -47,6 +47,13 @@ func (ctx *Context) Close() {
 	ctx.db.Close()
 }
 
+func (ctx *Context) clearUpdateStatements() {
+        ctx.deleteStmt = nil
+        ctx.updateStmt = nil
+        ctx.learnStmt = nil
+        ctx.insertStmt = nil
+}
+
 func (ctx *Context) BeginUpdate() error {
 	if ctx.tx != nil {
 		return errors.New("Attempt to begin an update while an update is already in progress.")
@@ -61,6 +68,7 @@ func (ctx *Context) AbortUpdate() {
 		ctx.tx.Rollback()
 		ctx.tx = nil
 	}
+        ctx.clearUpdateStatements()
 }
 
 func (ctx *Context) CompleteUpdate() error {
@@ -69,6 +77,7 @@ func (ctx *Context) CompleteUpdate() error {
 	}
 	err := ctx.tx.Commit()
 	ctx.tx = nil
+        ctx.clearUpdateStatements()
 	return err
 }
 
