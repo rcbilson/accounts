@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
@@ -34,7 +35,7 @@ func sendError(ctx echo.Context, code int, message string) error {
 }
 
 // (GET /transactions)
-func (s *Server) GetTransactions(ctx echo.Context, params api.GetTransactionsParams) error {
+func (s *Server) GetApiTransactions(ctx echo.Context, params api.GetApiTransactionsParams) error {
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -117,7 +118,7 @@ func (s *Server) insertOrUpdate(ctx echo.Context, t api.Transaction) error {
 }
 
 // (POST /transactions)
-func (s *Server) PostTransactions(ctx echo.Context) error {
+func (s *Server) PostApiTransactions(ctx echo.Context) error {
 	var t api.Transaction
 	err := ctx.Bind(&t)
 	if err != nil {
@@ -127,7 +128,7 @@ func (s *Server) PostTransactions(ctx echo.Context) error {
 }
 
 // (POST /transactions/id)
-func (s *Server) PostTransactionsId(ctx echo.Context, id string) error {
+func (s *Server) PostApiTransactionsId(ctx echo.Context, id string) error {
 	var t api.Transaction
 	err := ctx.Bind(&t)
 	if err != nil {
@@ -142,7 +143,7 @@ func (s *Server) PostTransactionsId(ctx echo.Context, id string) error {
 }
 
 // (DELETE /transactions/id)
-func (s *Server) DeleteTransactionsId(ctx echo.Context, id string) error {
+func (s *Server) DeleteApiTransactionsId(ctx echo.Context, id string) error {
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -192,12 +193,19 @@ func main() {
 		return nil
 	}
 
+	validatorOptions.Skipper = func(ctx echo.Context) bool {
+		return !strings.HasPrefix(ctx.Path(), "/api/")
+	}
+
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
 	e.Use(middleware.OapiRequestValidatorWithOptions(swagger, validatorOptions))
 
 	// We now register our petStore above as the handler for the interface
 	api.RegisterHandlers(e, s)
+
+	e.Static("/", "../../frontend/build")
+	e.File("/", "../../frontend/build/index.html")
 
 	// And we serve HTTP until the world ends.
 	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%d", *port)))

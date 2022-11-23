@@ -11,7 +11,7 @@ security:
   - BasicAuth: []
 
 paths:
-  /transactions:
+  /api/transactions:
     get:
       description: Returns a list of transactions
       parameters:
@@ -51,7 +51,7 @@ paths:
         '400':
           $ref: '#/components/responses/400Error'
 
-  /transactions/{id}:
+  /api/transactions/{id}:
     post:
       description: Lets a user update a transaction
       parameters:

@@ -71,8 +71,8 @@ type N400Error = Error
 // N500Error defines model for 500Error.
 type N500Error = Error
 
-// GetTransactionsParams defines parameters for GetTransactions.
-type GetTransactionsParams struct {
+// GetApiTransactionsParams defines parameters for GetApiTransactions.
+type GetApiTransactionsParams struct {
 	// DateFrom Earliest date for which results should be reported
 	DateFrom *DateFrom `form:"dateFrom,omitempty" json:"dateFrom,omitempty"`
 
@@ -98,11 +98,11 @@ type GetTransactionsParams struct {
 	Offset *PageOffset `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-// PostTransactionsJSONRequestBody defines body for PostTransactions for application/json ContentType.
-type PostTransactionsJSONRequestBody = Transaction
+// PostApiTransactionsJSONRequestBody defines body for PostApiTransactions for application/json ContentType.
+type PostApiTransactionsJSONRequestBody = Transaction
 
-// PostTransactionsIdJSONRequestBody defines body for PostTransactionsId for application/json ContentType.
-type PostTransactionsIdJSONRequestBody = Transaction
+// PostApiTransactionsIdJSONRequestBody defines body for PostApiTransactionsId for application/json ContentType.
+type PostApiTransactionsIdJSONRequestBody = Transaction
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -177,25 +177,25 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetTransactions request
-	GetTransactions(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiTransactions request
+	GetApiTransactions(ctx context.Context, params *GetApiTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostTransactions request with any body
-	PostTransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostApiTransactions request with any body
+	PostApiTransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostTransactions(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostApiTransactions(ctx context.Context, body PostApiTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeleteTransactionsId request
-	DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteApiTransactionsId request
+	DeleteApiTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostTransactionsId request with any body
-	PostTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostApiTransactionsId request with any body
+	PostApiTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostTransactionsId(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostApiTransactionsId(ctx context.Context, id string, body PostApiTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetTransactions(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTransactionsRequest(c.Server, params)
+func (c *Client) GetApiTransactions(ctx context.Context, params *GetApiTransactionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiTransactionsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -206,8 +206,8 @@ func (c *Client) GetTransactions(ctx context.Context, params *GetTransactionsPar
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostTransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostTransactionsRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostApiTransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiTransactionsRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -218,8 +218,8 @@ func (c *Client) PostTransactionsWithBody(ctx context.Context, contentType strin
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostTransactions(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostTransactionsRequest(c.Server, body)
+func (c *Client) PostApiTransactions(ctx context.Context, body PostApiTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiTransactionsRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +230,8 @@ func (c *Client) PostTransactions(ctx context.Context, body PostTransactionsJSON
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteTransactionsIdRequest(c.Server, id)
+func (c *Client) DeleteApiTransactionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteApiTransactionsIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -242,8 +242,8 @@ func (c *Client) DeleteTransactionsId(ctx context.Context, id string, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostTransactionsIdRequestWithBody(c.Server, id, contentType, body)
+func (c *Client) PostApiTransactionsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiTransactionsIdRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -254,8 +254,8 @@ func (c *Client) PostTransactionsIdWithBody(ctx context.Context, id string, cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostTransactionsId(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostTransactionsIdRequest(c.Server, id, body)
+func (c *Client) PostApiTransactionsId(ctx context.Context, id string, body PostApiTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiTransactionsIdRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -266,8 +266,8 @@ func (c *Client) PostTransactionsId(ctx context.Context, id string, body PostTra
 	return c.Client.Do(req)
 }
 
-// NewGetTransactionsRequest generates requests for GetTransactions
-func NewGetTransactionsRequest(server string, params *GetTransactionsParams) (*http.Request, error) {
+// NewGetApiTransactionsRequest generates requests for GetApiTransactions
+func NewGetApiTransactionsRequest(server string, params *GetApiTransactionsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -275,7 +275,7 @@ func NewGetTransactionsRequest(server string, params *GetTransactionsParams) (*h
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/transactions")
+	operationPath := fmt.Sprintf("/api/transactions")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -425,19 +425,19 @@ func NewGetTransactionsRequest(server string, params *GetTransactionsParams) (*h
 	return req, nil
 }
 
-// NewPostTransactionsRequest calls the generic PostTransactions builder with application/json body
-func NewPostTransactionsRequest(server string, body PostTransactionsJSONRequestBody) (*http.Request, error) {
+// NewPostApiTransactionsRequest calls the generic PostApiTransactions builder with application/json body
+func NewPostApiTransactionsRequest(server string, body PostApiTransactionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostTransactionsRequestWithBody(server, "application/json", bodyReader)
+	return NewPostApiTransactionsRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostTransactionsRequestWithBody generates requests for PostTransactions with any type of body
-func NewPostTransactionsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostApiTransactionsRequestWithBody generates requests for PostApiTransactions with any type of body
+func NewPostApiTransactionsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -445,7 +445,7 @@ func NewPostTransactionsRequestWithBody(server string, contentType string, body 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/transactions")
+	operationPath := fmt.Sprintf("/api/transactions")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -465,8 +465,8 @@ func NewPostTransactionsRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
-// NewDeleteTransactionsIdRequest generates requests for DeleteTransactionsId
-func NewDeleteTransactionsIdRequest(server string, id string) (*http.Request, error) {
+// NewDeleteApiTransactionsIdRequest generates requests for DeleteApiTransactionsId
+func NewDeleteApiTransactionsIdRequest(server string, id string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -481,7 +481,7 @@ func NewDeleteTransactionsIdRequest(server string, id string) (*http.Request, er
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/transactions/%s", pathParam0)
+	operationPath := fmt.Sprintf("/api/transactions/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -499,19 +499,19 @@ func NewDeleteTransactionsIdRequest(server string, id string) (*http.Request, er
 	return req, nil
 }
 
-// NewPostTransactionsIdRequest calls the generic PostTransactionsId builder with application/json body
-func NewPostTransactionsIdRequest(server string, id string, body PostTransactionsIdJSONRequestBody) (*http.Request, error) {
+// NewPostApiTransactionsIdRequest calls the generic PostApiTransactionsId builder with application/json body
+func NewPostApiTransactionsIdRequest(server string, id string, body PostApiTransactionsIdJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostTransactionsIdRequestWithBody(server, id, "application/json", bodyReader)
+	return NewPostApiTransactionsIdRequestWithBody(server, id, "application/json", bodyReader)
 }
 
-// NewPostTransactionsIdRequestWithBody generates requests for PostTransactionsId with any type of body
-func NewPostTransactionsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostApiTransactionsIdRequestWithBody generates requests for PostApiTransactionsId with any type of body
+func NewPostApiTransactionsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -526,7 +526,7 @@ func NewPostTransactionsIdRequestWithBody(server string, id string, contentType 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/transactions/%s", pathParam0)
+	operationPath := fmt.Sprintf("/api/transactions/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -589,24 +589,24 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetTransactions request
-	GetTransactionsWithResponse(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*GetTransactionsResponse, error)
+	// GetApiTransactions request
+	GetApiTransactionsWithResponse(ctx context.Context, params *GetApiTransactionsParams, reqEditors ...RequestEditorFn) (*GetApiTransactionsResponse, error)
 
-	// PostTransactions request with any body
-	PostTransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error)
+	// PostApiTransactions request with any body
+	PostApiTransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiTransactionsResponse, error)
 
-	PostTransactionsWithResponse(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error)
+	PostApiTransactionsWithResponse(ctx context.Context, body PostApiTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiTransactionsResponse, error)
 
-	// DeleteTransactionsId request
-	DeleteTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteTransactionsIdResponse, error)
+	// DeleteApiTransactionsId request
+	DeleteApiTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteApiTransactionsIdResponse, error)
 
-	// PostTransactionsId request with any body
-	PostTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error)
+	// PostApiTransactionsId request with any body
+	PostApiTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiTransactionsIdResponse, error)
 
-	PostTransactionsIdWithResponse(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error)
+	PostApiTransactionsIdWithResponse(ctx context.Context, id string, body PostApiTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiTransactionsIdResponse, error)
 }
 
-type GetTransactionsResponse struct {
+type GetApiTransactionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Transaction
@@ -615,7 +615,7 @@ type GetTransactionsResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetTransactionsResponse) Status() string {
+func (r GetApiTransactionsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -623,21 +623,21 @@ func (r GetTransactionsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetTransactionsResponse) StatusCode() int {
+func (r GetApiTransactionsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostTransactionsResponse struct {
+type PostApiTransactionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r PostTransactionsResponse) Status() string {
+func (r PostApiTransactionsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -645,21 +645,21 @@ func (r PostTransactionsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostTransactionsResponse) StatusCode() int {
+func (r PostApiTransactionsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type DeleteTransactionsIdResponse struct {
+type DeleteApiTransactionsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r DeleteTransactionsIdResponse) Status() string {
+func (r DeleteApiTransactionsIdResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -667,21 +667,21 @@ func (r DeleteTransactionsIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DeleteTransactionsIdResponse) StatusCode() int {
+func (r DeleteApiTransactionsIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostTransactionsIdResponse struct {
+type PostApiTransactionsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r PostTransactionsIdResponse) Status() string {
+func (r PostApiTransactionsIdResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -689,74 +689,74 @@ func (r PostTransactionsIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostTransactionsIdResponse) StatusCode() int {
+func (r PostApiTransactionsIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// GetTransactionsWithResponse request returning *GetTransactionsResponse
-func (c *ClientWithResponses) GetTransactionsWithResponse(ctx context.Context, params *GetTransactionsParams, reqEditors ...RequestEditorFn) (*GetTransactionsResponse, error) {
-	rsp, err := c.GetTransactions(ctx, params, reqEditors...)
+// GetApiTransactionsWithResponse request returning *GetApiTransactionsResponse
+func (c *ClientWithResponses) GetApiTransactionsWithResponse(ctx context.Context, params *GetApiTransactionsParams, reqEditors ...RequestEditorFn) (*GetApiTransactionsResponse, error) {
+	rsp, err := c.GetApiTransactions(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetTransactionsResponse(rsp)
+	return ParseGetApiTransactionsResponse(rsp)
 }
 
-// PostTransactionsWithBodyWithResponse request with arbitrary body returning *PostTransactionsResponse
-func (c *ClientWithResponses) PostTransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error) {
-	rsp, err := c.PostTransactionsWithBody(ctx, contentType, body, reqEditors...)
+// PostApiTransactionsWithBodyWithResponse request with arbitrary body returning *PostApiTransactionsResponse
+func (c *ClientWithResponses) PostApiTransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiTransactionsResponse, error) {
+	rsp, err := c.PostApiTransactionsWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostTransactionsResponse(rsp)
+	return ParsePostApiTransactionsResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostTransactionsWithResponse(ctx context.Context, body PostTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsResponse, error) {
-	rsp, err := c.PostTransactions(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PostApiTransactionsWithResponse(ctx context.Context, body PostApiTransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiTransactionsResponse, error) {
+	rsp, err := c.PostApiTransactions(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostTransactionsResponse(rsp)
+	return ParsePostApiTransactionsResponse(rsp)
 }
 
-// DeleteTransactionsIdWithResponse request returning *DeleteTransactionsIdResponse
-func (c *ClientWithResponses) DeleteTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteTransactionsIdResponse, error) {
-	rsp, err := c.DeleteTransactionsId(ctx, id, reqEditors...)
+// DeleteApiTransactionsIdWithResponse request returning *DeleteApiTransactionsIdResponse
+func (c *ClientWithResponses) DeleteApiTransactionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteApiTransactionsIdResponse, error) {
+	rsp, err := c.DeleteApiTransactionsId(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDeleteTransactionsIdResponse(rsp)
+	return ParseDeleteApiTransactionsIdResponse(rsp)
 }
 
-// PostTransactionsIdWithBodyWithResponse request with arbitrary body returning *PostTransactionsIdResponse
-func (c *ClientWithResponses) PostTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error) {
-	rsp, err := c.PostTransactionsIdWithBody(ctx, id, contentType, body, reqEditors...)
+// PostApiTransactionsIdWithBodyWithResponse request with arbitrary body returning *PostApiTransactionsIdResponse
+func (c *ClientWithResponses) PostApiTransactionsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiTransactionsIdResponse, error) {
+	rsp, err := c.PostApiTransactionsIdWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostTransactionsIdResponse(rsp)
+	return ParsePostApiTransactionsIdResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostTransactionsIdWithResponse(ctx context.Context, id string, body PostTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostTransactionsIdResponse, error) {
-	rsp, err := c.PostTransactionsId(ctx, id, body, reqEditors...)
+func (c *ClientWithResponses) PostApiTransactionsIdWithResponse(ctx context.Context, id string, body PostApiTransactionsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiTransactionsIdResponse, error) {
+	rsp, err := c.PostApiTransactionsId(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostTransactionsIdResponse(rsp)
+	return ParsePostApiTransactionsIdResponse(rsp)
 }
 
-// ParseGetTransactionsResponse parses an HTTP response from a GetTransactionsWithResponse call
-func ParseGetTransactionsResponse(rsp *http.Response) (*GetTransactionsResponse, error) {
+// ParseGetApiTransactionsResponse parses an HTTP response from a GetApiTransactionsWithResponse call
+func ParseGetApiTransactionsResponse(rsp *http.Response) (*GetApiTransactionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetTransactionsResponse{
+	response := &GetApiTransactionsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -788,15 +788,15 @@ func ParseGetTransactionsResponse(rsp *http.Response) (*GetTransactionsResponse,
 	return response, nil
 }
 
-// ParsePostTransactionsResponse parses an HTTP response from a PostTransactionsWithResponse call
-func ParsePostTransactionsResponse(rsp *http.Response) (*PostTransactionsResponse, error) {
+// ParsePostApiTransactionsResponse parses an HTTP response from a PostApiTransactionsWithResponse call
+func ParsePostApiTransactionsResponse(rsp *http.Response) (*PostApiTransactionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostTransactionsResponse{
+	response := &PostApiTransactionsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -814,15 +814,15 @@ func ParsePostTransactionsResponse(rsp *http.Response) (*PostTransactionsRespons
 	return response, nil
 }
 
-// ParseDeleteTransactionsIdResponse parses an HTTP response from a DeleteTransactionsIdWithResponse call
-func ParseDeleteTransactionsIdResponse(rsp *http.Response) (*DeleteTransactionsIdResponse, error) {
+// ParseDeleteApiTransactionsIdResponse parses an HTTP response from a DeleteApiTransactionsIdWithResponse call
+func ParseDeleteApiTransactionsIdResponse(rsp *http.Response) (*DeleteApiTransactionsIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &DeleteTransactionsIdResponse{
+	response := &DeleteApiTransactionsIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -840,15 +840,15 @@ func ParseDeleteTransactionsIdResponse(rsp *http.Response) (*DeleteTransactionsI
 	return response, nil
 }
 
-// ParsePostTransactionsIdResponse parses an HTTP response from a PostTransactionsIdWithResponse call
-func ParsePostTransactionsIdResponse(rsp *http.Response) (*PostTransactionsIdResponse, error) {
+// ParsePostApiTransactionsIdResponse parses an HTTP response from a PostApiTransactionsIdWithResponse call
+func ParsePostApiTransactionsIdResponse(rsp *http.Response) (*PostApiTransactionsIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostTransactionsIdResponse{
+	response := &PostApiTransactionsIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -869,17 +869,17 @@ func ParsePostTransactionsIdResponse(rsp *http.Response) (*PostTransactionsIdRes
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /transactions)
-	GetTransactions(ctx echo.Context, params GetTransactionsParams) error
+	// (GET /api/transactions)
+	GetApiTransactions(ctx echo.Context, params GetApiTransactionsParams) error
 
-	// (POST /transactions)
-	PostTransactions(ctx echo.Context) error
+	// (POST /api/transactions)
+	PostApiTransactions(ctx echo.Context) error
 	// Deletes a transaction by ID
-	// (DELETE /transactions/{id})
-	DeleteTransactionsId(ctx echo.Context, id string) error
+	// (DELETE /api/transactions/{id})
+	DeleteApiTransactionsId(ctx echo.Context, id string) error
 
-	// (POST /transactions/{id})
-	PostTransactionsId(ctx echo.Context, id string) error
+	// (POST /api/transactions/{id})
+	PostApiTransactionsId(ctx echo.Context, id string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -887,14 +887,14 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// GetTransactions converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTransactions(ctx echo.Context) error {
+// GetApiTransactions converts echo context to params.
+func (w *ServerInterfaceWrapper) GetApiTransactions(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetTransactionsParams
+	var params GetApiTransactionsParams
 	// ------------- Optional query parameter "dateFrom" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "dateFrom", ctx.QueryParams(), &params.DateFrom)
@@ -952,41 +952,23 @@ func (w *ServerInterfaceWrapper) GetTransactions(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetTransactions(ctx, params)
+	err = w.Handler.GetApiTransactions(ctx, params)
 	return err
 }
 
-// PostTransactions converts echo context to params.
-func (w *ServerInterfaceWrapper) PostTransactions(ctx echo.Context) error {
+// PostApiTransactions converts echo context to params.
+func (w *ServerInterfaceWrapper) PostApiTransactions(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostTransactions(ctx)
+	err = w.Handler.PostApiTransactions(ctx)
 	return err
 }
 
-// DeleteTransactionsId converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteTransactionsId(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
-	}
-
-	ctx.Set(BasicAuthScopes, []string{""})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeleteTransactionsId(ctx, id)
-	return err
-}
-
-// PostTransactionsId converts echo context to params.
-func (w *ServerInterfaceWrapper) PostTransactionsId(ctx echo.Context) error {
+// DeleteApiTransactionsId converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteApiTransactionsId(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
@@ -999,7 +981,25 @@ func (w *ServerInterfaceWrapper) PostTransactionsId(ctx echo.Context) error {
 	ctx.Set(BasicAuthScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostTransactionsId(ctx, id)
+	err = w.Handler.DeleteApiTransactionsId(ctx, id)
+	return err
+}
+
+// PostApiTransactionsId converts echo context to params.
+func (w *ServerInterfaceWrapper) PostApiTransactionsId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostApiTransactionsId(ctx, id)
 	return err
 }
 
@@ -1031,10 +1031,10 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/transactions", wrapper.GetTransactions)
-	router.POST(baseURL+"/transactions", wrapper.PostTransactions)
-	router.DELETE(baseURL+"/transactions/:id", wrapper.DeleteTransactionsId)
-	router.POST(baseURL+"/transactions/:id", wrapper.PostTransactionsId)
+	router.GET(baseURL+"/api/transactions", wrapper.GetApiTransactions)
+	router.POST(baseURL+"/api/transactions", wrapper.PostApiTransactions)
+	router.DELETE(baseURL+"/api/transactions/:id", wrapper.DeleteApiTransactionsId)
+	router.POST(baseURL+"/api/transactions/:id", wrapper.PostApiTransactionsId)
 
 }
 
@@ -1051,13 +1051,13 @@ var swaggerSpec = []string{
 	"hsHN7L2qTSUQvgYglm0hf/rPnM8B7wEFbM+fMpRS0EHw6Dwgm5yZBohieY/SGIMwCJWc3naGd12fu8UX",
 	"0CnCz6gsKZ1R7HtQjQs54j0HhezXyMFhtS3ZZ1RmLwcjD5lq9DMNa/Qw+r0w4xXQAQ1v5jGtObqPioy+",
 	"CLzu6It3FvHrDuua2We+jF26w474BVgoW4ngk1grrWPKRDSOsUejQrLhOj52kU9JXNzMZCHvASm/8v7d",
-	"5N0kRuY8WOWNnMof06dCesXrBLfkHVXpw2pMlP4ADmhJKFEb4qiGg2vJAyZcsyrD/zw87w/u2/Fi3pmU",
-	"3Xxti7Ns8yQ6w7jbGM6w7UvWOTi6sXPO20kyzzDcDakzjbdjpb3bE7wfJpMXyU2ads/pTr/Nd/2hENVm",
-	"VI2C1kC0DHW9EZhKCqpjNdUWUaSPIehiKzslz8L6/IVOfRNC72hsAQCOxR4IUBhLgCwcdt3YB3pQ+zeO",
-	"9ot/K/0fXbV5M8kfpH4ozYwB2nH6T/ChERRDtYuzSgsIDyl+ISUJ2UBiykdTtRlKDWMrSP4es0/GruoB",
-	"ArFQFCHaBG12KSjEBKZdaMjCZXqlz8OsOpShvUl9uVeEcePawtxuH1E2d8uHqeR+3k/tIIct+eEwfA+8",
-	"9VnlUbZUoeZ/f1MIFh486Eh7b1sITaPiNNzmk4a1Hze22aU8q4te1Tuv5Cz7ejvO/gfd+6Yt21tsUsp7",
-	"K83tXUwJpbUy8xGw3i40NC1LeFCNr+GdceX9e9netf8EAAD//znG1tPCDwAA",
+	"5N0kRuY8WOWNnMof06dCesXrBLdU3pS8oyt9XI0J0x/AAS0JJWpDHBVxcC15wYRtVuUQLrz5PDTpz+/b",
+	"8ZremZTdmG2Ls2zzQDrDuFsczrDtK9c5OLrpc87bSTnPMNzNqjONt9OlvdvTvR8mkxepThp6z8lPv9t3",
+	"baIQ1WZUlILWQLQMdb0RmKoKqmNl1RZRq48h6GIrO0HP+vr8hU6EE0LvaGwPAI71HghQGEuALBx2TdkH",
+	"elD+N45G6n87BD66avNm4j/I/lCkGQO04xVwghKNoBiqXahVWkV4yPILWUnIDsSmfDRVm+HUMLaQ5O+R",
+	"BDJ2VQ9QiIWiCNMmeLNLQSEmMW1GQzIu0yt7dMyqQ0HaG92Xe+UYV7At0u06EnV0t42YSu6n/9RSctic",
+	"Hw4z4IG3Pqs825Yq1Pzvrw7BwoMHHdnvrQ+haVQcj9uU0rAL4go3u5Rn9dNru+iVtGV3b0fb/6CP37R5",
+	"e8tOSnlvzbm9iymhtGpmPgLW2yWHpmUJD6rxNbwzrrx/L9u79p8AAAD//50bX1TWDwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
