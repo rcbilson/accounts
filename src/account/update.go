@@ -64,7 +64,7 @@ func (ctx *Context) Update(r *Record) (Stats, error) {
 		ctx.updateStmt = stmt
 	}
 	result, err := ctx.updateStmt.Exec(
-		r.Date, r.Descr, r.Amount, r.Category, r.Subcategory, r.Id)
+		r.Date.String(), r.Descr, r.Amount, r.Category, r.Subcategory, r.Id)
 	if err != nil {
 		return stats, err
 	}
@@ -90,7 +90,7 @@ insert into xact (date, descr, amount, category, subcategory, state) values(?, ?
 		ctx.insertStmt = insert
 	}
 	result, err := ctx.insertStmt.Exec(
-		r.Date, r.Descr, r.Amount, r.Category, r.Subcategory)
+		r.Date.String(), r.Descr, r.Amount, r.Category, r.Subcategory)
 	if err != nil {
 		return stats, err
 	}

@@ -5,17 +5,16 @@ import (
 	"flag"
 	"log"
 	"os"
-	"time"
 
 	"knilson.org/accounts/account"
 )
 
-func mustParseDate(date string) *time.Time {
-	t, err := time.Parse("2006-01-02", date)
+func mustParseDate(date string) *account.Date {
+	d, err := account.ParseDate(date)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &t
+	return &d
 }
 
 func main() {
@@ -44,10 +43,10 @@ func main() {
 		} else if f.Name == "state" {
 			query.State = state
 		} else if f.Name == "limit" {
-                        query.Limit = limit
-                } else if f.Name == "offset" {
-                        query.Offset = offset
-                }
+			query.Limit = limit
+		} else if f.Name == "offset" {
+			query.Offset = offset
+		}
 	})
 
 	acct, err := account.Open()
@@ -65,7 +64,7 @@ func main() {
 	defer writer.Flush()
 
 	for r := range ch {
-		record := []string{r.Id, r.Date.Format("2006-01-02"), r.Descr, r.Amount, r.Category, r.Subcategory}
+		record := []string{r.Id, r.Date.String(), r.Descr, r.Amount, r.Category, r.Subcategory}
 		writer.Write(record)
 	}
 }

@@ -5,7 +5,6 @@ package account
 import (
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/mattn/go-sqlite3"
@@ -48,10 +47,10 @@ func (ctx *Context) Close() {
 }
 
 func (ctx *Context) clearUpdateStatements() {
-        ctx.deleteStmt = nil
-        ctx.updateStmt = nil
-        ctx.learnStmt = nil
-        ctx.insertStmt = nil
+	ctx.deleteStmt = nil
+	ctx.updateStmt = nil
+	ctx.learnStmt = nil
+	ctx.insertStmt = nil
 }
 
 func (ctx *Context) BeginUpdate() error {
@@ -68,7 +67,7 @@ func (ctx *Context) AbortUpdate() {
 		ctx.tx.Rollback()
 		ctx.tx = nil
 	}
-        ctx.clearUpdateStatements()
+	ctx.clearUpdateStatements()
 }
 
 func (ctx *Context) CompleteUpdate() error {
@@ -77,13 +76,13 @@ func (ctx *Context) CompleteUpdate() error {
 	}
 	err := ctx.tx.Commit()
 	ctx.tx = nil
-        ctx.clearUpdateStatements()
+	ctx.clearUpdateStatements()
 	return err
 }
 
 type Record struct {
 	Id          string
-	Date        time.Time
+	Date        Date
 	Descr       string
 	Amount      string
 	Category    string

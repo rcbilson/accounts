@@ -27,14 +27,14 @@ func TestBuildQuery(t *testing.T) {
 	assert.Assert(t, cmp.Contains(params, xxx))
 	assert.Assert(t, cmp.Contains(params, yyy))
 
-	date := time.Now()
+	date := Date(time.Now())
 	query, params = buildQuery(QuerySpec{DateFrom: &date})
 	assert.Assert(t, cmp.Contains(query, " WHERE date >= ?"))
-	assert.Equal(t, params[0], date.Format("2006-01-02"))
+	assert.Equal(t, params[0], date.String())
 
 	query, params = buildQuery(QuerySpec{DateUntil: &date})
 	assert.Assert(t, cmp.Contains(query, " WHERE date < ?"))
-	assert.Equal(t, params[0], date.Format("2006-01-02"))
+	assert.Equal(t, params[0], date.String())
 
 	query, params = buildQuery(QuerySpec{DescrLike: &xxx})
 	assert.Assert(t, cmp.Contains(query, " WHERE descr like ?"))

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -29,15 +28,15 @@ func sendError(ctx echo.Context, code int, message string) error {
 	return err
 }
 
-func ifNotEmptyTime(s string) *time.Time {
+func ifNotEmptyDate(s string) *account.Date {
 	if s == "" {
 		return nil
 	}
-	t, err := time.Parse("2006-01-02", s)
+	d, err := account.ParseDate(s)
 	if err != nil {
 		return nil
 	}
-	return &t
+	return &d
 }
 
 func ifNotEmptyInt(s string) *int {
@@ -65,8 +64,8 @@ func (s *Server) GetApiTransactions(ctx echo.Context) error {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
 	query := account.QuerySpec{
-		DateFrom:    ifNotEmptyTime(ctx.QueryParam("DateFrom")),
-		DateUntil:   ifNotEmptyTime(ctx.QueryParam("DateUntil")),
+		DateFrom:    ifNotEmptyDate(ctx.QueryParam("DateFrom")),
+		DateUntil:   ifNotEmptyDate(ctx.QueryParam("DateUntil")),
 		DescrLike:   ifNotEmpty(ctx.QueryParam("DescrLike")),
 		Category:    ifNotEmpty(ctx.QueryParam("Category")),
 		Subcategory: ifNotEmpty(ctx.QueryParam("Subcategory")),

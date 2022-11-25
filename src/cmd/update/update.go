@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"knilson.org/accounts/account"
 )
@@ -34,7 +33,7 @@ func doUpdate(acct *account.Context, record []string, rowCount int) account.Stat
 	var r account.Record
 	var err error
 	r.Id = record[0]
-	r.Date, err = time.Parse("2006-01-02", record[1])
+	r.Date, err = account.ParseDate(record[1])
 	checkRow(err, rowCount)
 	r.Descr = record[2]
 	_, err = strconv.ParseFloat(record[3], 64)
@@ -48,9 +47,9 @@ func doUpdate(acct *account.Context, record []string, rowCount int) account.Stat
 	}
 	stats, err := acct.Update(&r)
 	checkRow(err, rowCount)
-        s, err := acct.UpdateLearning(&r)
-        checkRow(err, rowCount)
-        stats.Add(s)
+	s, err := acct.UpdateLearning(&r)
+	checkRow(err, rowCount)
+	stats.Add(s)
 	return stats
 }
 

@@ -3,18 +3,17 @@ package main
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"gotest.tools/assert"
 	"knilson.org/accounts/account"
 )
 
-func tm(s string) time.Time {
-	t, err := time.Parse("2006-01-02", s)
+func tm(s string) account.Date {
+	d, err := account.ParseDate(s)
 	if err != nil {
 		panic("bad time constant")
 	}
-	return t
+	return d
 }
 
 func TestParseTD(t *testing.T) {

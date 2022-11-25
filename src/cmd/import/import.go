@@ -30,10 +30,11 @@ func parseTD(record []string) (*account.Record, error) {
 	// 01/05/2021,SEND E-TFR CA***t5J ,413.00,,13041.20
 	var err error
 	var r account.Record
-	r.Date, err = time.Parse("01/02/2006", record[0])
+	t, err := time.Parse("01/02/2006", record[0])
 	if err != nil {
 		return nil, err
 	}
+        r.Date = account.Date(t)
 	r.Descr = record[1]
 	debit, err := strconv.ParseFloat(record[2], 64)
 	if err != nil {
@@ -54,10 +55,11 @@ func parseTangerine(record []string) (*account.Record, error) {
 	// 1/1/2021,DEBIT,Recurring Internet Withdrawal to,SPOINT To 3023010786,-250
 	var err error
 	var r account.Record
-	r.Date, err = time.Parse("1/2/2006", record[0])
+	t, err := time.Parse("1/2/2006", record[0])
 	if err != nil {
 		return nil, err
 	}
+        r.Date = account.Date(t)
 	r.Descr = record[2] + "/" + record[3]
 	_, err = strconv.ParseFloat(record[4], 64)
 	if err != nil {

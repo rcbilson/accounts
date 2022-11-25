@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
 )
 
 func maybeString(maybe sql.NullString) string {
@@ -16,8 +15,8 @@ func maybeString(maybe sql.NullString) string {
 }
 
 type QuerySpec struct {
-	DateFrom    *time.Time
-	DateUntil   *time.Time
+	DateFrom    *Date
+	DateUntil   *Date
 	DescrLike   *string
 	Category    *string
 	Subcategory *string
@@ -34,11 +33,11 @@ func buildQuery(spec QuerySpec) (string, []interface{}) {
 	params := make([]interface{}, 0)
 	if spec.DateFrom != nil {
 		expr = append(expr, "date >= ?")
-		params = append(params, spec.DateFrom.Format("2006-01-02"))
+		params = append(params, spec.DateFrom.String())
 	}
 	if spec.DateUntil != nil {
 		expr = append(expr, "date < ?")
-		params = append(params, spec.DateUntil.Format("2006-01-02"))
+		params = append(params, spec.DateUntil.String())
 	}
 	if spec.DescrLike != nil {
 		expr = append(expr, "descr like ?")
@@ -63,7 +62,7 @@ func buildQuery(spec QuerySpec) (string, []interface{}) {
 			query = fmt.Sprintf("%s AND %s", query, e)
 		}
 	}
-        query = fmt.Sprintf("%s %s", query, orderBy)
+	query = fmt.Sprintf("%s %s", query, orderBy)
 	if spec.Limit != nil {
 		query = fmt.Sprintf("%s LIMIT ?", query)
 		params = append(params, *spec.Limit)

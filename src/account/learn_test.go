@@ -37,7 +37,7 @@ func dumpLearning(t *testing.T, acct *Context) {
 func TestLearningErrors(t *testing.T) {
 	acct := setupLearningTest(t)
 
-	testRecord := Record{"", time.Now(), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
+	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
 	s, err := acct.UpdateLearning(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
 	assert.ErrorContains(t, err, "without beginning an update")
@@ -51,9 +51,9 @@ func TestLearning(t *testing.T) {
 	defer acct.AbortUpdate()
 
 	testRecords := []Record{
-		{"1", time.Now(), "SQ * PEN ISLAND # 7545", "-75.45", "Frivolities", "One"},
-		{"2", time.Now(), "SQ * PEN ISLAND # 4321", "-43.21", "Frivolities", "Two"},
-		{"3", time.Now(), "SQ * QWIK-E-MART # 7545", "-75.45", "Frivolities", "Three"}}
+		{"1", Date(time.Now()), "SQ * PEN ISLAND # 7545", "-75.45", "Frivolities", "One"},
+		{"2", Date(time.Now()), "SQ * PEN ISLAND # 4321", "-43.21", "Frivolities", "Two"},
+		{"3", Date(time.Now()), "SQ * QWIK-E-MART # 7545", "-75.45", "Frivolities", "Three"}}
 	for _, r := range testRecords {
 		s, err := acct.UpdateLearning(&r)
 		assert.NilError(t, err)
@@ -64,32 +64,32 @@ func TestLearning(t *testing.T) {
 	assert.NilError(t, err)
 
 	// exact match
-	testRecord := Record{"17", time.Now(), "SQ * PEN ISLAND # 7545", "-75.45", "", ""}
+	testRecord := Record{"17", Date(time.Now()), "SQ * PEN ISLAND # 7545", "-75.45", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Category, "Frivolities")
 	assert.Equal(t, testRecord.Subcategory, "One")
 
 	// partial match with exact amount
-	testRecord = Record{"17", time.Now(), "SQ * PEN ISLAND # 9989", "-75.45", "", ""}
+	testRecord = Record{"17", Date(time.Now()), "SQ * PEN ISLAND # 9989", "-75.45", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "One")
 
 	// partial match with different amount, should pick most recent option
-	testRecord = Record{"17", time.Now(), "SQ * PEN ISLAND # 9989", "-99.89", "", ""}
+	testRecord = Record{"17", Date(time.Now()), "SQ * PEN ISLAND # 9989", "-99.89", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "Two")
 
 	// partial match with exact amount, should pick most recent option
-	testRecord = Record{"17", time.Now(), "SQ * AN PIELAND", "-43.21", "", ""}
+	testRecord = Record{"17", Date(time.Now()), "SQ * AN PIELAND", "-43.21", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "Two")
 
 	// partial match with different amount, should pick most recent option
-	testRecord = Record{"17", time.Now(), "SQ * AN PIELAND", "-98.99", "", ""}
+	testRecord = Record{"17", Date(time.Now()), "SQ * AN PIELAND", "-98.99", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "Three")

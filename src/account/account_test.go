@@ -45,7 +45,7 @@ func assertRecordsEqualNoId(t *testing.T, left Record, right Record) {
 	assert.Equal(t, left.Amount, right.Amount)
 	assert.Equal(t, left.Category, right.Category)
 	assert.Equal(t, left.Subcategory, right.Subcategory)
-	assert.Equal(t, left.Date.Format("2006-01-02"), right.Date.Format("2006-01-02"))
+	assert.Equal(t, left.Date.String(), right.Date.String())
 }
 
 func assertRecordsEqual(t *testing.T, left Record, right Record) {
@@ -99,7 +99,7 @@ func testDelete(t *testing.T, acct *Context, id string) {
 func TestErrors(t *testing.T) {
 	acct := setupTest(t)
 
-	testRecord := Record{"", time.Now(), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
+	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
 	s, err := acct.Insert(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
 	assert.ErrorContains(t, err, "without beginning an update")
@@ -132,7 +132,7 @@ func TestModifications(t *testing.T) {
 
 	//////////// Insertion
 
-	testRecord := Record{"", time.Now(), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
+	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
 	testInsertion(t, acct, &testRecord)
 
 	recs := materializeQuery(t, acct, QuerySpec{})
@@ -142,7 +142,7 @@ func TestModifications(t *testing.T) {
 
 	//////////// Update
 
-	updateRecord := Record{recs[0].Id, time.Now(), "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"}
+	updateRecord := Record{recs[0].Id, Date(time.Now()), "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"}
 	testUpdate(t, acct, &updateRecord)
 
 	recs = materializeQuery(t, acct, QuerySpec{})
@@ -157,12 +157,12 @@ func TestModifications(t *testing.T) {
 	assert.Equal(t, len(recs), 0)
 }
 
-func tm(s string) time.Time {
-	t, err := time.Parse("2006-01-02", s)
+func tm(s string) Date {
+	d, err := ParseDate(s)
 	if err != nil {
 		panic("bad time constant")
 	}
-	return t
+	return d
 }
 
 func TestQuery(t *testing.T) {
