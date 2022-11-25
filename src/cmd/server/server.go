@@ -1,20 +1,15 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
+	"strconv"
+	"time"
 
-	"github.com/deepmap/oapi-codegen/pkg/middleware"
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
-	oapifilter "github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v4/middleware"
 	"knilson.org/accounts/account"
-	"knilson.org/accounts/account/api"
 )
 
 type Server struct {
@@ -27,47 +22,65 @@ func NewServer() *Server {
 // This function wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
 func sendError(ctx echo.Context, code int, message string) error {
-	sendErr := api.Error{
-		Message: message,
+	type Error struct {
+		message string
 	}
-	err := ctx.JSON(code, sendErr)
+	err := ctx.JSON(code, Error{message})
 	return err
 }
 
+func ifNotEmptyTime(s string) *time.Time {
+	if s == "" {
+		return nil
+	}
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return nil
+	}
+	return &t
+}
+
+func ifNotEmptyInt(s string) *int {
+	if s == "" {
+		return nil
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return nil
+	}
+	return &i
+}
+
+func ifNotEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // (GET /transactions)
-func (s *Server) GetApiTransactions(ctx echo.Context, params api.GetApiTransactionsParams) error {
+func (s *Server) GetApiTransactions(ctx echo.Context) error {
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
 	query := account.QuerySpec{
-		DescrLike:   params.DescrLike,
-		Category:    params.Category,
-		Subcategory: params.Subcategory,
-		State:       params.State,
-		Limit:       params.Limit,
-		Offset:      params.Offset,
-	}
-	if params.DateFrom != nil {
-		query.DateFrom = &params.DateFrom.Time
-	}
-	if params.DateUntil != nil {
-		query.DateUntil = &params.DateUntil.Time
+		DateFrom:    ifNotEmptyTime(ctx.QueryParam("DateFrom")),
+		DateUntil:   ifNotEmptyTime(ctx.QueryParam("DateUntil")),
+		DescrLike:   ifNotEmpty(ctx.QueryParam("DescrLike")),
+		Category:    ifNotEmpty(ctx.QueryParam("Category")),
+		Subcategory: ifNotEmpty(ctx.QueryParam("Subcategory")),
+		State:       ifNotEmpty(ctx.QueryParam("State")),
+		Limit:       ifNotEmptyInt(ctx.QueryParam("Limit")),
+		Offset:      ifNotEmptyInt(ctx.QueryParam("Offset")),
 	}
 	ch, err := acct.Query(query)
 	if err != nil {
 		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
 	}
-	results := make([]api.Transaction, 0)
+	results := make([]account.Record, 0)
 	for r := range ch {
-		var t api.Transaction
-		t.Id = &r.Id
-		t.Date = &openapi_types.Date{r.Date}
-		t.Description = &r.Descr
-		t.Amount = &r.Amount
-		t.Category = &r.Category
-		t.Subcategory = &r.Subcategory
-		results = append(results, t)
+		results = append(results, *r)
 	}
 	return ctx.JSON(http.StatusOK, results)
 }
@@ -80,7 +93,7 @@ func emptyIfNil(s *string) string {
 }
 
 // (POST /transactions)
-func (s *Server) insertOrUpdate(ctx echo.Context, t api.Transaction) error {
+func (s *Server) insertOrUpdate(ctx echo.Context, r account.Record) error {
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -90,16 +103,6 @@ func (s *Server) insertOrUpdate(ctx echo.Context, t api.Transaction) error {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
 	}
 	defer acct.AbortUpdate()
-
-	var r account.Record
-	if t.Date != nil {
-		r.Date = t.Date.Time
-	}
-	r.Id = emptyIfNil(t.Id)
-	r.Descr = emptyIfNil(t.Description)
-	r.Amount = emptyIfNil(t.Amount)
-	r.Category = emptyIfNil(t.Category)
-	r.Subcategory = emptyIfNil(t.Subcategory)
 
 	if r.Id == "" {
 		_, err = acct.Insert(&r)
@@ -119,31 +122,33 @@ func (s *Server) insertOrUpdate(ctx echo.Context, t api.Transaction) error {
 
 // (POST /transactions)
 func (s *Server) PostApiTransactions(ctx echo.Context) error {
-	var t api.Transaction
-	err := ctx.Bind(&t)
+	var r account.Record
+	err := ctx.Bind(&r)
 	if err != nil {
 		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
 	}
-	return s.insertOrUpdate(ctx, t)
+	return s.insertOrUpdate(ctx, r)
 }
 
 // (POST /transactions/id)
-func (s *Server) PostApiTransactionsId(ctx echo.Context, id string) error {
-	var t api.Transaction
-	err := ctx.Bind(&t)
+func (s *Server) PostApiTransactionsId(ctx echo.Context) error {
+	id := ctx.Param("id")
+	var r account.Record
+	err := ctx.Bind(&r)
 	if err != nil {
 		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
 	}
-	if t.Id == nil || *t.Id == "" {
-		t.Id = &id
-	} else if *t.Id != id {
+	if r.Id == "" {
+		r.Id = id
+	} else if r.Id != id {
 		return sendError(ctx, http.StatusBadRequest, "ID must be empty or equal to path ID")
 	}
-	return s.insertOrUpdate(ctx, t)
+	return s.insertOrUpdate(ctx, r)
 }
 
 // (DELETE /transactions/id)
-func (s *Server) DeleteApiTransactionsId(ctx echo.Context, id string) error {
+func (s *Server) DeleteApiTransactionsId(ctx echo.Context) error {
+	id := ctx.Param("id")
 	acct, err := account.Open()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -169,40 +174,15 @@ func main() {
 	var port = flag.Int("port", 8080, "Port for test HTTP server")
 	flag.Parse()
 
-	swagger, err := api.GetSwagger()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
-		os.Exit(1)
-	}
-
-	// Clear out the servers array in the swagger spec, that skips validating
-	// that server names match. We don't know how this thing will be run.
-	swagger.Servers = nil
-
-	// Create an instance of our handler which satisfies the generated interface
 	s := NewServer()
 
-	// This is how you set up a basic Echo router
 	e := echo.New()
-	// Log all requests
-	e.Use(echomiddleware.Logger())
+	e.Use(middleware.Logger())
 
-	validatorOptions := &middleware.Options{}
-
-	validatorOptions.Options.AuthenticationFunc = func(c context.Context, input *oapifilter.AuthenticationInput) error {
-		return nil
-	}
-
-	validatorOptions.Skipper = func(ctx echo.Context) bool {
-		return !strings.HasPrefix(ctx.Path(), "/api/")
-	}
-
-	// Use our validation middleware to check all requests against the
-	// OpenAPI schema.
-	e.Use(middleware.OapiRequestValidatorWithOptions(swagger, validatorOptions))
-
-	// We now register our petStore above as the handler for the interface
-	api.RegisterHandlers(e, s)
+	e.GET("/api/transactions", s.GetApiTransactions)
+	e.POST("/api/transactions", s.PostApiTransactions)
+	e.POST("/api/transactions/:id", s.PostApiTransactionsId)
+	e.DELETE("/api/transactions/:id", s.DeleteApiTransactionsId)
 
 	e.Static("/", "../../frontend/build")
 	e.File("/", "../../frontend/build/index.html")
