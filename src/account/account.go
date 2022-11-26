@@ -81,10 +81,10 @@ func (ctx *Context) CompleteUpdate() error {
 }
 
 type Record struct {
-	Id          string
-	Date        Date
-	Descr       string
-	Amount      string
-	Category    string
-	Subcategory string
+	Id          string `json:"id"`
+	Date        Date   `json:"date"`
+	Descr       string `json:"descr"`
+	Amount      string `json:"amount"`
+	Category    string `json:"category"`
+	Subcategory string `json:"subcategory"`
 }
