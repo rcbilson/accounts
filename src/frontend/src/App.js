@@ -9,6 +9,8 @@ import QueryBuilder from './QueryBuilder.js';
 export default function App() {
   const [querySpec, setQuerySpec] = useState({
     descrLike: "",
+    category: "",
+    subcategory: "",
   });
 
   return (

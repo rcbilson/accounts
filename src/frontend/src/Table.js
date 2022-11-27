@@ -47,9 +47,20 @@ export default function TransactionProvider({querySpec}) {
   // similar to componentDidMount()
   useEffect(() => {
     console.log(querySpec)
-    let path = "/api/transactions";
+    let specs = []
     if (querySpec.descrLike !== "") {
-      path = path + "?DescrLike=" + querySpec.descrLike;
+      specs.push("DescrLike=" + querySpec.descrLike);
+    }
+    if (querySpec.category !== "") {
+      specs.push("Category=" + querySpec.category);
+    }
+    if (querySpec.subcategory !== "") {
+      specs.push("Subcategory=" + querySpec.subcategory);
+    }
+    let path = "/api/transactions";
+    if (specs.length > 0) {
+      path += "?" + specs[0]
+      specs.slice(1).forEach((e) => { path += "&" + e })
     }
     fetch(encodeURI(path))
       .then(res => res.json())
