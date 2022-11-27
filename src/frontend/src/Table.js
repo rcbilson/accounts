@@ -37,7 +37,7 @@ const columns: GridColDef[] = [
   },
 ];
 
-export default function TransactionProvider() {
+export default function TransactionProvider({querySpec}) {
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
@@ -46,7 +46,12 @@ export default function TransactionProvider() {
   // this useEffect will run once
   // similar to componentDidMount()
   useEffect(() => {
-    fetch("/api/transactions")
+    console.log(querySpec)
+    let path = "/api/transactions";
+    if (querySpec.descrLike !== "") {
+      path = path + "?DescrLike=" + querySpec.descrLike;
+    }
+    fetch(encodeURI(path))
       .then(res => res.json())
       .then(
         (result) => {
@@ -61,7 +66,7 @@ export default function TransactionProvider() {
           setError(error);
         }
       )
-  }, [])
+  }, [querySpec])
 
   if (error) {
     return <div>Error: {error.message}</div>;
@@ -74,7 +79,7 @@ export default function TransactionProvider() {
 
 function GridView(rows) {
   return (
-    <Box sx={{ height: '100vh', width: '100%' }}>
+    <Box sx={{ height: '100%', width: '100%' }}>
       <DataGrid
         rows={rows}
         columns={columns}
