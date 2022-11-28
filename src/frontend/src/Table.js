@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 90 },
   {
     field: 'date',
     headerName: 'Date',
@@ -37,7 +36,7 @@ const columns: GridColDef[] = [
   },
 ];
 
-export default function TransactionProvider({querySpec}) {
+export default function TransactionProvider({querySpec, setTotalValue}) {
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
@@ -90,6 +89,7 @@ export default function TransactionProvider({querySpec}) {
   } else if (!isLoaded) {
     return <div>Loading...</div>;
   } else {
+    setTotalValue(items.reduce((a, c) => a + parseFloat(c.amount), 0));
     return GridView(items);
   }
 }
@@ -101,8 +101,6 @@ function GridView(rows) {
         rows={rows}
         columns={columns}
         autoPageSize
-        rowsPerPageOptions={[25]}
-        checkboxSelection
         disableSelectionOnClick
         experimentalFeatures={{ newEditingApi: true }}
       />

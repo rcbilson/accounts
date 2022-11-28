@@ -13,10 +13,12 @@ export default function App() {
     subcategory: "",
   });
 
+  const [totalValue, setTotalValue] = useState(0)
+
   return (
     <Stack sx={{ height: '100vh', width: '100%' }}>
-      <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} />
-      <Table querySpec={querySpec} />
+      <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} totalValue={totalValue} />
+      <Table querySpec={querySpec} setTotalValue={setTotalValue} />
     </Stack>
   );
 }

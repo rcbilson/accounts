@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { TextField, Stack } from '@mui/material';
 
-export default function QueryBuilder({querySpec, setQuerySpec}) {
+export default function QueryBuilder({querySpec, setQuerySpec, totalValue}) {
   return (
     <Stack direction="row">
       <TextField
@@ -56,6 +56,12 @@ export default function QueryBuilder({querySpec, setQuerySpec}) {
           ...querySpec,
           subcategory: e.target.value,
         })}
+      />
+     <TextField
+        id="totalValue"
+        label="Total Amount"
+        value={totalValue.toFixed(2)}
+        disabled
       />
     </Stack>
   )
