@@ -42,12 +42,15 @@ export default function TransactionProvider({querySpec}) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
 
-  // Note: the empty deps array [] means
-  // this useEffect will run once
-  // similar to componentDidMount()
   useEffect(() => {
     console.log(querySpec)
     let specs = []
+    if (querySpec.dateFrom) {
+      specs.push("DateFrom=" + querySpec.dateFrom);
+    }
+    if (querySpec.dateUntil) {
+      specs.push("DateUntil=" + querySpec.dateUntil);
+    }
     if (querySpec.descrLike !== "") {
       specs.push("DescrLike=" + querySpec.descrLike);
     }
@@ -61,6 +64,9 @@ export default function TransactionProvider({querySpec}) {
     if (specs.length > 0) {
       path += "?" + specs[0]
       specs.slice(1).forEach((e) => { path += "&" + e })
+    } else {
+      // no filter, limit to the first 50
+      path += "?Limit=50"
     }
     fetch(encodeURI(path))
       .then(res => res.json())
