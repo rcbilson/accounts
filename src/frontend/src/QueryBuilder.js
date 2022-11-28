@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { TextField, Stack } from '@mui/material';
-import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 
 export default function QueryBuilder({querySpec, setQuerySpec}) {
   return (

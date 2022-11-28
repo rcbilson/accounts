@@ -11,8 +11,6 @@
     "@mui/material": "^5.10.15",
     "@mui/system": "^5.10.15",
     "@mui/x-data-grid": "^5.17.13",
-    "@mui/x-data-grid-generator": "^5.17.13",
-    "@mui/x-date-pickers": "^5.0.9",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
