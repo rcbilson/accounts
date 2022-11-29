@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
@@ -36,65 +35,7 @@ const columns: GridColDef[] = [
   },
 ];
 
-export default function TransactionProvider({querySpec, setTotalValue}) {
-  const [error, setError] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    console.log(querySpec)
-    let specs = []
-    if (querySpec.dateFrom) {
-      specs.push("DateFrom=" + querySpec.dateFrom);
-    }
-    if (querySpec.dateUntil) {
-      specs.push("DateUntil=" + querySpec.dateUntil);
-    }
-    if (querySpec.descrLike !== "") {
-      specs.push("DescrLike=" + querySpec.descrLike);
-    }
-    if (querySpec.category !== "") {
-      specs.push("Category=" + querySpec.category);
-    }
-    if (querySpec.subcategory !== "") {
-      specs.push("Subcategory=" + querySpec.subcategory);
-    }
-    let path = "/api/transactions";
-    if (specs.length > 0) {
-      path += "?" + specs[0]
-      specs.slice(1).forEach((e) => { path += "&" + e })
-    } else {
-      // no filter, limit to the first 50
-      path += "?Limit=50"
-    }
-    fetch(encodeURI(path))
-      .then(res => res.json())
-      .then(
-        (result) => {
-          setIsLoaded(true);
-          setItems(result);
-        },
-        // Note: it's important to handle errors here
-        // instead of a catch() block so that we don't swallow
-        // exceptions from actual bugs in components.
-        (error) => {
-          setIsLoaded(true);
-          setError(error);
-        }
-      )
-  }, [querySpec])
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  } else if (!isLoaded) {
-    return <div>Loading...</div>;
-  } else {
-    setTotalValue(items.reduce((a, c) => a + parseFloat(c.amount), 0));
-    return GridView(items);
-  }
-}
-
-function GridView(rows) {
+export default function GridView({rows}) {
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <DataGrid
