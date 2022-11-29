@@ -1,5 +1,8 @@
+import React from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
+
+import { transactionUpdate } from './Transaction.js';
 
 const columns: GridColDef[] = [
   {
@@ -36,6 +39,16 @@ const columns: GridColDef[] = [
 ];
 
 export default function GridView({rows}) {
+
+  const processRowUpdate = async (newRow) => {
+    await transactionUpdate(newRow);
+    return newRow
+  }
+
+  const handleProcessRowUpdateError = (error: Error) => {
+    alert(error.message);
+  }
+
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <DataGrid
@@ -44,6 +57,8 @@ export default function GridView({rows}) {
         autoPageSize
         disableSelectionOnClick
         experimentalFeatures={{ newEditingApi: true }}
+        processRowUpdate={processRowUpdate}
+        onProcessRowUpdateError={handleProcessRowUpdateError}
       />
     </Box>
   );

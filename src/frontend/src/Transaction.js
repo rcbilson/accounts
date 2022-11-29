@@ -26,3 +26,23 @@ export function transactionQuery(querySpec) {
   return fetch(encodeURI(path))
     .then(res => res.json())
 }
+
+export async function transactionUpdate(t) {
+  if (!t?.id) {
+    throw new Error(`No id specified in ${t}`)
+  }
+
+  const response = await fetch(`/api/transactions/${t.id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(t)
+  });
+  if (response.length > 0) {
+    const r = response.json();
+    if (r.message) {
+      throw new Error(r.message);
+    }
+  }
+}
