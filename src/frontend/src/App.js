@@ -3,7 +3,7 @@ import { Stack } from '@mui/material';
 
 import Table from './Table.js';
 import QueryBuilder from './QueryBuilder.js';
-import { transactionQuery } from './Transaction.js'
+import * as Transaction from './Transaction.js'
 
 export default function App() {
   const [querySpec, setQuerySpec] = useState({
@@ -14,19 +14,16 @@ export default function App() {
     subcategory: "",
   });
 
-  const [totalValue, setTotalValue] = useState(0)
-
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    transactionQuery(querySpec)
+    Transaction.Query(querySpec)
       .then(
         (result) => {
           setIsLoaded(true);
           setItems(result);
-          setTotalValue(result.reduce((a, c) => a + parseFloat(c.amount), 0));
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
@@ -38,15 +35,26 @@ export default function App() {
       )
   }, [querySpec])
 
+  const handleUpdate = async (newRow) => {
+    await Transaction.Update(newRow);
+    return newRow
+  }
+
+  const handleDelete = (id) => {
+    Transaction.Delete(id)
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  }
+
   if (error) {
     return <div>Error: {error.message}</div>;
   } else if (!isLoaded) {
     return <div>Loading...</div>;
   } else {
+    const totalValue = items.reduce((a, c) => a + parseFloat(c.amount), 0);
     return (
       <Stack sx={{ height: '100vh', width: '100%' }}>
         <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} totalValue={totalValue} />
-        <Table rows={items} />
+        <Table items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
       </Stack>
     );
   }

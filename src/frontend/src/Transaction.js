@@ -1,4 +1,4 @@
-export function transactionQuery(querySpec) {
+export function Query(querySpec) {
   let specs = []
   if (querySpec.dateFrom) {
     specs.push("DateFrom=" + querySpec.dateFrom);
@@ -27,7 +27,19 @@ export function transactionQuery(querySpec) {
     .then(res => res.json())
 }
 
-export async function transactionUpdate(t) {
+export async function Delete(id) {
+  const response = await fetch(`/api/transactions/${id}`, {
+    method: 'DELETE',
+  });
+  if (response.length > 0) {
+    const r = response.json();
+    if (r.message) {
+      throw new Error(r.message);
+    }
+  }
+}
+
+export async function Update(t) {
   if (!t?.id) {
     throw new Error(`No id specified in ${t}`)
   }
