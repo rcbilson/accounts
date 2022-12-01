@@ -2,10 +2,13 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
 
-export default function GridView({items, onUpdate, onDelete}) {
-  const handleProcessRowUpdateError = (error: Error) => {
-    alert(error.message);
+export default function NewTable({items, onUpdate, onDelete}) {
+  function processRowUpdate(newRow, oldRow) {
+    console.log(newRow);
+    console.log(oldRow);
+    return newRow;
   }
 
   const columns: GridColDef[] = [
@@ -46,6 +49,11 @@ export default function GridView({items, onUpdate, onDelete}) {
       width: 80,
       getActions: (params) => [
         <GridActionsCellItem
+          icon={<CheckIcon />}
+          label="Accept"
+          onClick={() => onUpdate(params.row)}
+        />,
+        <GridActionsCellItem
           icon={<DeleteIcon />}
           label="Delete"
           onClick={() => onDelete(params.id)}
@@ -62,8 +70,7 @@ export default function GridView({items, onUpdate, onDelete}) {
         autoPageSize
         disableSelectionOnClick
         experimentalFeatures={{ newEditingApi: true }}
-        processRowUpdate={onUpdate}
-        onProcessRowUpdateError={handleProcessRowUpdateError}
+        processRowUpdate={processRowUpdate}
       />
     </Box>
   );

@@ -6,14 +6,17 @@ export function Query(querySpec) {
   if (querySpec.dateUntil) {
     specs.push("DateUntil=" + querySpec.dateUntil);
   }
-  if (querySpec.descrLike !== "") {
+  if (querySpec.descrLike && querySpec.descrLike !== "") {
     specs.push("DescrLike=" + querySpec.descrLike);
   }
-  if (querySpec.category !== "") {
+  if (querySpec.category && querySpec.category !== "") {
     specs.push("Category=" + querySpec.category);
   }
-  if (querySpec.subcategory !== "") {
+  if (querySpec.subcategory && querySpec.subcategory !== "") {
     specs.push("Subcategory=" + querySpec.subcategory);
+  }
+  if (querySpec.state && querySpec.state !== "") {
+    specs.push("State=" + querySpec.state);
   }
   let path = "/api/transactions";
   if (specs.length > 0) {
