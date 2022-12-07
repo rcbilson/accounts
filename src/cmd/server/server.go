@@ -22,7 +22,7 @@ func NewServer() *Server {
 // handling the failure to marshal that.
 func sendError(ctx echo.Context, code int, message string) error {
 	type Error struct {
-		message string
+		Message string `json:"message"`
 	}
 	err := ctx.JSON(code, Error{message})
 	return err
@@ -89,6 +89,32 @@ func emptyIfNil(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func contains(slice []string, target string) bool {
+	for _, s := range slice {
+		if s == target {
+			return true
+		}
+	}
+	return false
+}
+
+// (POST /import)
+func (s *Server) PostApiImport(ctx echo.Context) error {
+	if !contains(ctx.Request().Header["Content-Type"], "text/csv") {
+		return sendError(ctx, http.StatusUnsupportedMediaType, "this route only accepts text/csv")
+	}
+	acct, err := account.Open()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+	}
+	_, err = acct.Import(ctx.Request().Body)
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error importing file: %v", err))
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }
 
 // (POST /transactions)
@@ -182,6 +208,7 @@ func main() {
 	e.POST("/api/transactions", s.PostApiTransactions)
 	e.POST("/api/transactions/:id", s.PostApiTransactionsId)
 	e.DELETE("/api/transactions/:id", s.DeleteApiTransactionsId)
+	e.POST("/api/import", s.PostApiImport)
 
 	e.Static("/", "../../frontend/build")
 	e.File("/", "../../frontend/build/index.html")

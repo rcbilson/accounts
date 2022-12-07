@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec sqlite3 $ACCOUNTS_DBFILE
