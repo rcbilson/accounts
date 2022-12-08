@@ -1,6 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
+import * as Transaction from './Transaction.js';
+import { Stack } from '@mui/material';
 
-const DragAndDrop = props => {
+const DragAndDrop = ({refresh}) => {
+  const [currentFile, setCurrentFile] = useState(null);
+  const [error, setError] = useState(null);
+
+  const importFiles = async (files) => {
+    setError(null);
+    try {
+      await files.reduce(async (promise, file) => {
+        await promise;
+        setCurrentFile(file.name);
+        const contents = await file.text();
+        await Transaction.Import(contents)
+      }, Promise.resolve())
+      setCurrentFile(null);
+      refresh();
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   const handleDragEnter = e => {
     e.preventDefault();
     e.stopPropagation();
@@ -13,21 +34,35 @@ const DragAndDrop = props => {
     e.preventDefault();
     e.stopPropagation();
   };
-  const handleDrop = e => {
+  const handleDrop = async e => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("handleDrop");
-    console.log([...e.dataTransfer.files]);
+    const files = [...e.dataTransfer.files];
+    //console.log(files);
+    importFiles(files);
   };
+  let statusBar;
+  if (error) {
+    if (currentFile) {
+      statusBar =  `An error occurred while importing ${currentFile}: ${error}`
+    } else {
+      statusBar =  `An error occurred: ${error}`
+    }
+  } else if (currentFile) {
+    statusBar = `Importing ${currentFile}`
+  } else {
+    statusBar = 'Drop a csv file here to import.'
+  }
   return (
-    <div className={'drag-drop-zone'}
+    <Stack
+      alignItems="center"
       onDrop={e => handleDrop(e)}
       onDragOver={e => handleDragOver(e)}
       onDragEnter={e => handleDragEnter(e)}
       onDragLeave={e => handleDragLeave(e)}
     >
-      {props.children}
-    </div>
+      {statusBar}
+    </Stack>
   );
 };
 export default DragAndDrop;

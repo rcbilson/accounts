@@ -61,3 +61,19 @@ export async function Update(t) {
     }
   }
 }
+
+export async function Import(blob) {
+  const response = await fetch(`/api/import`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/csv'
+    },
+    body: blob
+  });
+  if (response.length > 0) {
+    const r = response.json();
+    if (r.message) {
+      throw new Error(r.message);
+    }
+  }
+}

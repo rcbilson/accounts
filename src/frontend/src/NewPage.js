@@ -10,7 +10,7 @@ export default function NewPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
+  const refreshQuery = () => {
     Transaction.Query({ state: "new" })
       .then(
         (result) => {
@@ -25,7 +25,8 @@ export default function NewPage() {
           setError(error);
         }
       )
-  }, [])
+  }
+  useEffect(refreshQuery, [])
 
   const handleUpdate = async (newRow) => {
     await Transaction.Update(newRow);
@@ -44,11 +45,10 @@ export default function NewPage() {
     return <div>Loading...</div>;
   } else {
     return (
-      <DragAndDrop>
-        <Stack sx={{ height: '100vh', width: '100%' }}>
-          <NewTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
-        </Stack>
-      </DragAndDrop>
+      <Stack sx={{ height: '100vh', width: '100%' }}>
+        <DragAndDrop refresh={refreshQuery} />
+        <NewTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
+      </Stack>
     );
   }
 }
