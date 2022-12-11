@@ -25,7 +25,7 @@ type QuerySpec struct {
 	Offset      *int
 }
 
-const baseQuery = "SELECT rowid, date, descr, amount, category, subcategory FROM xact"
+const baseQuery = "SELECT rowid, date, descr, amount, category, subcategory, state FROM xact"
 const orderBy = "ORDER BY date DESC"
 
 func buildQuery(spec QuerySpec) (string, []interface{}) {
@@ -91,13 +91,15 @@ func (ctx *Context) Query(spec QuerySpec) (<-chan *Record, error) {
 			var r Record
 			var maybeCat sql.NullString
 			var maybeSubcat sql.NullString
-			err := rows.Scan(&r.Id, &r.Date, &r.Descr, &r.Amount, &maybeCat, &maybeSubcat)
+                        var maybeState sql.NullString
+			err := rows.Scan(&r.Id, &r.Date, &r.Descr, &r.Amount, &maybeCat, &maybeSubcat, &maybeState)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 			r.Category = maybeString(maybeCat)
 			r.Subcategory = maybeString(maybeSubcat)
+			r.State = maybeString(maybeState)
 			ch <- &r
 		}
 		err = rows.Err()

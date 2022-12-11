@@ -30,8 +30,13 @@ export default function NewPage() {
 
   const handleUpdate = async (newRow) => {
     await Transaction.Update(newRow);
-    setItems((prevItems) => prevItems.filter((item) => item.id !== newRow.id));
     return newRow
+  }
+
+  const handleAccept = async (newRow) => {
+    delete newRow.state;
+    await Transaction.Update(newRow);
+    setItems((prevItems) => prevItems.filter((item) => item.id !== newRow.id));
   }
 
   const handleDelete = async (id) => {
@@ -47,7 +52,7 @@ export default function NewPage() {
     return (
       <Stack sx={{ height: '100vh', width: '100%' }}>
         <DragAndDrop refresh={refreshQuery} />
-        <NewTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
+        <NewTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} onAccept={handleAccept} />
       </Stack>
     );
   }

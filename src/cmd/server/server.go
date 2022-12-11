@@ -196,7 +196,7 @@ func (s *Server) DeleteApiTransactionsId(ctx echo.Context) error {
 }
 
 func main() {
-	var port = flag.Int("port", 8080, "Port for test HTTP server")
+	var port = flag.Int("port", 9000, "Port for test HTTP server")
 	flag.Parse()
 
 	s := NewServer()

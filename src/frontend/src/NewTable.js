@@ -4,10 +4,9 @@ import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 
-export default function NewTable({items, onUpdate, onDelete}) {
+export default function NewTable({items, onUpdate, onDelete, onAccept}) {
   function processRowUpdate(newRow, oldRow) {
-    console.log(newRow);
-    console.log(oldRow);
+    onUpdate(newRow);
     return newRow;
   }
 
@@ -51,7 +50,7 @@ export default function NewTable({items, onUpdate, onDelete}) {
         <GridActionsCellItem
           icon={<CheckIcon />}
           label="Accept"
-          onClick={() => onUpdate(params.row)}
+          onClick={() => onAccept(params.row)}
         />,
         <GridActionsCellItem
           icon={<DeleteIcon />}

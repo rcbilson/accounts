@@ -99,7 +99,7 @@ func testDelete(t *testing.T, acct *Context, id string) {
 func TestErrors(t *testing.T) {
 	acct := setupTest(t)
 
-	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
+	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes", ""}
 	s, err := acct.Insert(&testRecord)
 	assert.Equal(t, s, Stats{0, 0, 0})
 	assert.ErrorContains(t, err, "without beginning an update")
@@ -132,7 +132,7 @@ func TestModifications(t *testing.T) {
 
 	//////////// Insertion
 
-	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes"}
+	testRecord := Record{"", Date(time.Now()), "Pen Island", "-75.45", "Frivolities", "Tchotchkes", ""}
 	testInsertion(t, acct, &testRecord)
 
 	recs := materializeQuery(t, acct, QuerySpec{})
@@ -142,7 +142,7 @@ func TestModifications(t *testing.T) {
 
 	//////////// Update
 
-	updateRecord := Record{recs[0].Id, Date(time.Now()), "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"}
+	updateRecord := Record{recs[0].Id, Date(time.Now()), "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream", ""}
 	testUpdate(t, acct, &updateRecord)
 
 	recs = materializeQuery(t, acct, QuerySpec{})
@@ -173,10 +173,10 @@ func TestQuery(t *testing.T) {
 	date3 := tm("2022-11-03")
 
 	testRecords := []Record{
-		{"", date1, "Pen Island", "-75.45", "Frivolities", "Tchotchkes"},
-		{"", date2, "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream"},
-		{"", date2, "Qwik Stop", "17.42", "Necessities", "Wine"},
-		{"", date3, "Dewey Cheatham & Howe", "17.42", "Legalities", "Success Fees"}}
+		{"", date1, "Pen Island", "-75.45", "Frivolities", "Tchotchkes", ""},
+		{"", date2, "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream", ""},
+		{"", date2, "Qwik Stop", "17.42", "Necessities", "Wine", ""},
+		{"", date3, "Dewey Cheatham & Howe", "17.42", "Legalities", "Success Fees", ""}}
 
 	for _, r := range testRecords {
 		testInsertion(t, acct, &r)

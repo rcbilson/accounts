@@ -57,14 +57,14 @@ func (ctx *Context) Update(r *Record) (Stats, error) {
 	}
 	if ctx.updateStmt == nil {
 		stmt, err := ctx.tx.Prepare(
-			"update xact set date=?, descr=?, amount=?, category=?, subcategory=?, state=null where rowid=?")
+			"update xact set date=?, descr=?, amount=?, category=?, subcategory=?, state=? where rowid=?")
 		if err != nil {
 			return stats, err
 		}
 		ctx.updateStmt = stmt
 	}
 	result, err := ctx.updateStmt.Exec(
-		r.Date.String(), r.Descr, r.Amount, r.Category, r.Subcategory, r.Id)
+		r.Date.String(), r.Descr, r.Amount, r.Category, r.Subcategory, r.State, r.Id)
 	if err != nil {
 		return stats, err
 	}

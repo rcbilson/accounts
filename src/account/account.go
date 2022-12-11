@@ -87,4 +87,5 @@ type Record struct {
 	Amount      string `json:"amount"`
 	Category    string `json:"category"`
 	Subcategory string `json:"subcategory"`
+	State       string `json:"state,omitempty"`
 }
