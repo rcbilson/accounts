@@ -4,6 +4,7 @@ import { Stack } from '@mui/material';
 import QueryTable from './QueryTable.js';
 import QueryBuilder from './QueryBuilder.js';
 import * as Transaction from './Transaction.js'
+import Drawer from './Drawer.js';
 
 export default function QueryPage() {
   const [querySpec, setQuerySpec] = useState({
@@ -53,7 +54,10 @@ export default function QueryPage() {
     const totalValue = items.reduce((a, c) => a + parseFloat(c.amount), 0);
     return (
       <Stack sx={{ height: '100vh', width: '100%' }}>
-        <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} totalValue={totalValue} />
+        <Stack direction='row'>
+          <Drawer />
+          <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} totalValue={totalValue} />
+        </Stack>
         <QueryTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
       </Stack>
     );

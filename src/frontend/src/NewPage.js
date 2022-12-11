@@ -4,6 +4,7 @@ import { Stack } from '@mui/material';
 import NewTable from './NewTable.js';
 import DragAndDrop from './DragAndDrop.js';
 import * as Transaction from './Transaction.js'
+import Drawer from './Drawer.js';
 
 export default function NewPage() {
   const [error, setError] = useState(null);
@@ -51,7 +52,10 @@ export default function NewPage() {
   } else {
     return (
       <Stack sx={{ height: '100vh', width: '100%' }}>
-        <DragAndDrop refresh={refreshQuery} />
+        <Stack direction='row'>
+          <Drawer />
+          <DragAndDrop refresh={refreshQuery} />
+        </Stack>
         <NewTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} onAccept={handleAccept} />
       </Stack>
     );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as Transaction from './Transaction.js';
-import { Stack } from '@mui/material';
+import { Typography } from '@mui/material';
 
 const DragAndDrop = ({refresh}) => {
   const [currentFile, setCurrentFile] = useState(null);
@@ -54,15 +54,16 @@ const DragAndDrop = ({refresh}) => {
     statusBar = 'Drop a csv file here to import.'
   }
   return (
-    <Stack
-      alignItems="center"
+    <Typography
+      sx={{width: '100%'}}
+      align="center"
       onDrop={e => handleDrop(e)}
       onDragOver={e => handleDragOver(e)}
       onDragEnter={e => handleDragEnter(e)}
       onDragLeave={e => handleDragLeave(e)}
     >
       {statusBar}
-    </Stack>
+    </Typography>
   );
 };
 export default DragAndDrop;

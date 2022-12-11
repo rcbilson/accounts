@@ -7,11 +7,12 @@ import {
 import ErrorPage from "./ErrorPage.js";
 import QueryPage from "./QueryPage.js";
 import NewPage from "./NewPage.js";
+import HomePage from "./HomePage.js";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <div>Hello world!</div>,
+    element: <HomePage />,
     errorElement: <ErrorPage />,
   },
   {
