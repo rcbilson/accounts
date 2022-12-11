@@ -4,6 +4,11 @@ import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function QueryTable({items, onUpdate, onDelete}) {
+  function processRowUpdate(newRow) {
+    onUpdate(newRow);
+    return newRow;
+  }
+
   const handleProcessRowUpdateError = (error: Error) => {
     alert(error.message);
   }
@@ -62,7 +67,7 @@ export default function QueryTable({items, onUpdate, onDelete}) {
         autoPageSize
         disableSelectionOnClick
         experimentalFeatures={{ newEditingApi: true }}
-        processRowUpdate={onUpdate}
+        processRowUpdate={processRowUpdate}
         onProcessRowUpdateError={handleProcessRowUpdateError}
       />
     </Box>

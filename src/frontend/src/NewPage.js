@@ -31,7 +31,12 @@ export default function NewPage() {
 
   const handleUpdate = async (newRow) => {
     await Transaction.Update(newRow);
-    return newRow
+    setItems((prevItems) => prevItems.map((item) => {
+      if (item.id === newRow.id) {
+        return newRow;
+      }
+      return item;
+    }))
   }
 
   const handleAccept = async (newRow) => {

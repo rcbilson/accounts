@@ -5,7 +5,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 
 export default function NewTable({items, onUpdate, onDelete, onAccept}) {
-  function processRowUpdate(newRow, oldRow) {
+  function processRowUpdate(newRow) {
     onUpdate(newRow);
     return newRow;
   }
