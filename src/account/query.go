@@ -28,7 +28,7 @@ type QuerySpec struct {
 const baseQuery = "SELECT rowid, date, descr, amount, category, subcategory, state FROM xact"
 const orderBy = "ORDER BY date DESC"
 
-func buildQuery(spec QuerySpec) (string, []interface{}) {
+func buildQuery(spec QuerySpec, baseQuery string, orderAndGroup string) (string, []interface{}) {
 	expr := make([]string, 0)
 	params := make([]interface{}, 0)
 	if spec.DateFrom != nil {
@@ -62,7 +62,7 @@ func buildQuery(spec QuerySpec) (string, []interface{}) {
 			query = fmt.Sprintf("%s AND %s", query, e)
 		}
 	}
-	query = fmt.Sprintf("%s %s", query, orderBy)
+	query = fmt.Sprintf("%s %s", query, orderAndGroup)
 	if spec.Limit != nil {
 		query = fmt.Sprintf("%s LIMIT ?", query)
 		params = append(params, *spec.Limit)
@@ -75,7 +75,7 @@ func buildQuery(spec QuerySpec) (string, []interface{}) {
 }
 
 func (ctx *Context) Query(spec QuerySpec) (<-chan *Record, error) {
-	query, params := buildQuery(spec)
+	query, params := buildQuery(spec, baseQuery, orderBy)
 	rows, err := ctx.db.Query(query, params...)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (ctx *Context) Query(spec QuerySpec) (<-chan *Record, error) {
 			var r Record
 			var maybeCat sql.NullString
 			var maybeSubcat sql.NullString
-                        var maybeState sql.NullString
+			var maybeState sql.NullString
 			err := rows.Scan(&r.Id, &r.Date, &r.Descr, &r.Amount, &maybeCat, &maybeSubcat, &maybeState)
 			if err != nil {
 				log.Println(err)

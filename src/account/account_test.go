@@ -29,15 +29,19 @@ CREATE TABLE xact (
 	return acct
 }
 
-func materializeQuery(t *testing.T, acct *Context, query QuerySpec) []Record {
-	ch, err := acct.Query(query)
-	assert.NilError(t, err)
-
-	result := make([]Record, 0)
+func materialize[R any](t *testing.T, ch <-chan *R) []R {
+	result := make([]R, 0)
 	for rec := range ch {
 		result = append(result, *rec)
 	}
 	return result
+}
+
+func materializeQuery(t *testing.T, acct *Context, query QuerySpec) []Record {
+	ch, err := acct.Query(query)
+	assert.NilError(t, err)
+
+	return materialize(t, ch)
 }
 
 func assertRecordsEqualNoId(t *testing.T, left Record, right Record) {
@@ -176,7 +180,8 @@ func TestQuery(t *testing.T) {
 		{"", date1, "Pen Island", "-75.45", "Frivolities", "Tchotchkes", ""},
 		{"", date2, "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream", ""},
 		{"", date2, "Qwik Stop", "17.42", "Necessities", "Wine", ""},
-		{"", date3, "Dewey Cheatham & Howe", "17.42", "Legalities", "Success Fees", ""}}
+		{"", date3, "Dewey Cheatham & Howe", "17.42", "Legalities", "Success Fees", ""},
+	}
 
 	for _, r := range testRecords {
 		testInsertion(t, acct, &r)
@@ -212,4 +217,19 @@ func TestQuery(t *testing.T) {
 
 	recs = materializeQuery(t, acct, QuerySpec{DateUntil: &date2})
 	assert.Equal(t, len(recs), 1)
+
+	ch, err := acct.AggregateCategories(QuerySpec{})
+	assert.NilError(t, err)
+	agg := materialize(t, ch)
+	assert.Equal(t, len(agg), 3)
+
+	ch, err = acct.AggregateSubcategories(QuerySpec{Category: &necessities})
+	assert.NilError(t, err)
+	agg = materialize(t, ch)
+	assert.Equal(t, len(agg), 2)
+
+	ch, err = acct.AggregateSubcategories(QuerySpec{Category: &legalities})
+	assert.NilError(t, err)
+	agg = materialize(t, ch)
+	assert.Equal(t, len(agg), 1)
 }
