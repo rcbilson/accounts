@@ -4,7 +4,7 @@ import { Stack } from '@mui/material';
 import QueryTable from './QueryTable.js';
 import QueryBuilder from './QueryBuilder.js';
 import * as Transaction from './Transaction.js'
-import Drawer from './Drawer.js';
+import TemporaryDrawer from './TemporaryDrawer.js';
 
 export default function QueryPage() {
   const [querySpec, setQuerySpec] = useState({
@@ -60,7 +60,7 @@ export default function QueryPage() {
     return (
       <Stack sx={{ height: '100vh', width: '100%' }}>
         <Stack direction='row'>
-          <Drawer />
+          <TemporaryDrawer />
           <QueryBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} totalValue={totalValue} />
         </Stack>
         <QueryTable items={items} onUpdate={handleUpdate} onDelete={handleDelete} />
