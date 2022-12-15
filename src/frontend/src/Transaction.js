@@ -1,4 +1,4 @@
-export function Query(querySpec) {
+export async function doQuery(baseUrl, querySpec, defaultQueryString) {
   let specs = []
   if (querySpec.dateFrom) {
     specs.push("DateFrom=" + querySpec.dateFrom);
@@ -18,16 +18,22 @@ export function Query(querySpec) {
   if (querySpec.state && querySpec.state !== "") {
     specs.push("State=" + querySpec.state);
   }
-  let path = "/api/transactions";
+  if (querySpec.limit) {
+    specs.push("Limit=" + querySpec.limit);
+  }
+  let path = baseUrl;
   if (specs.length > 0) {
     path += "?" + specs[0]
     specs.slice(1).forEach((e) => { path += "&" + e })
-  } else {
-    // no filter, limit to the first 50
-    path += "?Limit=50"
+  } else if (defaultQueryString) {
+    path += defaultQueryString;
   }
   return fetch(encodeURI(path))
     .then(res => res.json())
+}
+
+export async function Query(querySpec) {
+  return doQuery("/api/transactions", querySpec, "?Limit=50");
 }
 
 export async function Delete(id) {
@@ -76,4 +82,8 @@ export async function Import(blob) {
       throw new Error(r.message);
     }
   }
+}
+
+export async function Categories(querySpec) {
+  return doQuery("/api/categories", querySpec);
 }

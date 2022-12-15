@@ -84,6 +84,29 @@ func (s *Server) GetApiTransactions(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, results)
 }
 
+// (GET /api/categories)
+func (s *Server) GetApiCategories(ctx echo.Context) error {
+	acct, err := account.Open()
+	if err != nil {
+		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+	}
+	query := account.QuerySpec{
+		DateFrom:    ifNotEmptyDate(ctx.QueryParam("DateFrom")),
+		DateUntil:   ifNotEmptyDate(ctx.QueryParam("DateUntil")),
+		Limit:       ifNotEmptyInt(ctx.QueryParam("Limit")),
+		Offset:      ifNotEmptyInt(ctx.QueryParam("Offset")),
+	}
+	ch, err := acct.AggregateCategories(query)
+	if err != nil {
+		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+	}
+	results := make([]account.Aggregate, 0)
+	for r := range ch {
+		results = append(results, *r)
+	}
+	return ctx.JSON(http.StatusOK, results)
+}
+
 func emptyIfNil(s *string) string {
 	if s == nil {
 		return ""
@@ -209,6 +232,7 @@ func main() {
 	e.POST("/api/transactions/:id", s.PostApiTransactionsId)
 	e.DELETE("/api/transactions/:id", s.DeleteApiTransactionsId)
 	e.POST("/api/import", s.PostApiImport)
+	e.GET("/api/categories", s.GetApiCategories)
 
 	e.Static("/", "../../frontend/build")
 	e.File("/", "../../frontend/build/index.html")

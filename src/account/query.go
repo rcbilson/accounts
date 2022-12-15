@@ -28,7 +28,7 @@ type QuerySpec struct {
 const baseQuery = "SELECT rowid, date, descr, amount, category, subcategory, state FROM xact"
 const orderBy = "ORDER BY date DESC"
 
-func buildQuery(spec QuerySpec, baseQuery string, orderAndGroup string) (string, []interface{}) {
+func buildQueryWhere(spec QuerySpec, baseQuery string, where string, orderAndGroup string) (string, []interface{}) {
 	expr := make([]string, 0)
 	params := make([]interface{}, 0)
 	if spec.DateFrom != nil {
@@ -61,6 +61,11 @@ func buildQuery(spec QuerySpec, baseQuery string, orderAndGroup string) (string,
 		for _, e := range expr[1:] {
 			query = fmt.Sprintf("%s AND %s", query, e)
 		}
+		if where != "" {
+			query = fmt.Sprintf("%s AND %s", query, where)
+		}
+	} else if where != "" {
+		query = fmt.Sprintf("%s WHERE %s", query, where)
 	}
 	query = fmt.Sprintf("%s %s", query, orderAndGroup)
 	if spec.Limit != nil {
@@ -72,6 +77,10 @@ func buildQuery(spec QuerySpec, baseQuery string, orderAndGroup string) (string,
 		params = append(params, *spec.Offset)
 	}
 	return query, params
+}
+
+func buildQuery(spec QuerySpec, baseQuery string, orderAndGroup string) (string, []interface{}) {
+	return buildQueryWhere(spec, baseQuery, "", orderAndGroup)
 }
 
 func (ctx *Context) Query(spec QuerySpec) (<-chan *Record, error) {
