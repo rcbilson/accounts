@@ -26,6 +26,32 @@ CREATE TABLE xact (
         `)
 	assert.NilError(t, err)
 
+	_, err = acct.db.Exec(`
+CREATE TABLE IF NOT EXISTS "key_categories"(
+  "category" TEXT,
+  "key" TEXT
+);
+        `)
+	assert.NilError(t, err)
+
+	_, err = acct.db.Exec(`
+CREATE VIEW keycats as
+select category, key from key_categories
+union
+select category, 'Expenses' from xact where category != 'Income' and category != '' and category not in (select category from key_categories)
+        `)
+	assert.NilError(t, err)
+
+	_, err = acct.db.Exec(`
+INSERT INTO key_categories VALUES('Legalities', 'Responsibilities')
+        `)
+	assert.NilError(t, err)
+
+	_, err = acct.db.Exec(`
+INSERT INTO key_categories VALUES('Necessities', 'Responsibilities')
+        `)
+	assert.NilError(t, err)
+
 	return acct
 }
 
@@ -177,6 +203,7 @@ func TestQuery(t *testing.T) {
 	date3 := tm("2022-11-03")
 
 	testRecords := []Record{
+		{"", date1, "Sugar Daddy", "100", "Income", "", ""},
 		{"", date1, "Pen Island", "-75.45", "Frivolities", "Tchotchkes", ""},
 		{"", date2, "Qwik-E-Mart", "17.42", "Necessities", "Ice Cream", ""},
 		{"", date2, "Qwik Stop", "17.42", "Necessities", "Wine", ""},
@@ -188,7 +215,7 @@ func TestQuery(t *testing.T) {
 	}
 
 	recs := materializeQuery(t, acct, QuerySpec{})
-	assert.Equal(t, len(recs), 4)
+	assert.Equal(t, len(recs), 5)
 
 	necessities := "Necessities"
 	recs = materializeQuery(t, acct, QuerySpec{Category: &necessities})
@@ -216,7 +243,7 @@ func TestQuery(t *testing.T) {
 	assert.Equal(t, len(recs), 3)
 
 	recs = materializeQuery(t, acct, QuerySpec{DateUntil: &date2})
-	assert.Equal(t, len(recs), 1)
+	assert.Equal(t, len(recs), 2)
 
 	ch, err := acct.AggregateCategories(QuerySpec{})
 	assert.NilError(t, err)
@@ -232,4 +259,9 @@ func TestQuery(t *testing.T) {
 	assert.NilError(t, err)
 	agg = materialize(t, ch)
 	assert.Equal(t, len(agg), 1)
+
+	summary, err := acct.Summary(QuerySpec{})
+	assert.NilError(t, err)
+	assert.Equal(t, len(summary.Amounts), 2)
+	assert.Equal(t, summary.Income, "100.00")
 }

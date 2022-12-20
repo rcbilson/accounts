@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Stack } from '@mui/material';
 
 import PermanentDrawer from './PermanentDrawer.js';
 import CategoryWidget from './CategoryWidget.js';
+import SummaryWidget from './SummaryWidget.js';
 import DateBuilder from './DateBuilder.js';
 
 export default function HomePage() {
@@ -13,7 +14,10 @@ export default function HomePage() {
       <PermanentDrawer />
       <Stack>
         <DateBuilder querySpec={querySpec} setQuerySpec={setQuerySpec} />
-        <CategoryWidget querySpec={querySpec}/>
+        <Stack direction='row'>
+          <SummaryWidget querySpec={querySpec}/>
+          <CategoryWidget querySpec={querySpec}/>
+        </Stack>
       </Stack>
     </Stack>
   )

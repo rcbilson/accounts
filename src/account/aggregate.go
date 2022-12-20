@@ -18,6 +18,10 @@ func (ctx *Context) aggregate(spec QuerySpec, baseQuery string, where string, or
 		return nil, err
 	}
 
+	return buildAggregate(rows)
+}
+
+func buildAggregate(rows *sql.Rows) (<-chan *Aggregate, error) {
 	ch := make(chan *Aggregate)
 
 	go func() {
@@ -37,7 +41,7 @@ func (ctx *Context) aggregate(spec QuerySpec, baseQuery string, where string, or
 			r.Category = maybeString(maybeCat)
 			ch <- &r
 		}
-		err = rows.Err()
+		err := rows.Err()
 		if err != nil {
 			log.Println(err)
 		}
@@ -58,4 +62,46 @@ func (ctx *Context) AggregateSubcategories(spec QuerySpec) (<-chan *Aggregate, e
 		"SELECT subcategory, -sum(amount) as total FROM xact",
 		"",
 		"GROUP BY subcategory ORDER BY total DESC")
+}
+
+type Summary struct {
+	Income  string      `json:"income"`
+	Amounts []Aggregate `json:"amounts"`
+}
+
+func (ctx *Context) Summary(spec QuerySpec) (*Summary, error) {
+	var result Summary
+
+	query, params := buildQueryWhere(spec,
+		"select sum(amount) from xact",
+		"category = 'Income'",
+		"")
+	row := ctx.db.QueryRow(query, params...)
+	var income float64
+	err := row.Scan(&income)
+	if err != nil {
+		return nil, err
+	}
+	result.Income = fmt.Sprintf("%.2f", income)
+
+	query, params = buildQueryWhere(spec,
+		"SELECT key, -sum(amount) AS total FROM xact JOIN keycats ON keycats.category = xact.category",
+		"",
+		"GROUP BY key ORDER BY total DESC")
+	rows, err := ctx.db.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+
+	ch, err := buildAggregate(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Amounts = make([]Aggregate, 0)
+	for agg := range ch {
+		result.Amounts = append(result.Amounts, *agg)
+	}
+
+	return &result, nil
 }

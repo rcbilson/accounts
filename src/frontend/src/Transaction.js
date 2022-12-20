@@ -87,3 +87,7 @@ export async function Import(blob) {
 export async function Categories(querySpec) {
   return doQuery("/api/categories", querySpec);
 }
+
+export async function Summary(querySpec) {
+  return doQuery("/api/summary", querySpec);
+}
