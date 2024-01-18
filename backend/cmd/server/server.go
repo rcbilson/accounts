@@ -1,11 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"knilson.org/accounts/account"
@@ -91,10 +92,10 @@ func (s *Server) GetApiCategories(ctx echo.Context) error {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
 	query := account.QuerySpec{
-		DateFrom:    ifNotEmptyDate(ctx.QueryParam("DateFrom")),
-		DateUntil:   ifNotEmptyDate(ctx.QueryParam("DateUntil")),
-		Limit:       ifNotEmptyInt(ctx.QueryParam("Limit")),
-		Offset:      ifNotEmptyInt(ctx.QueryParam("Offset")),
+		DateFrom:  ifNotEmptyDate(ctx.QueryParam("DateFrom")),
+		DateUntil: ifNotEmptyDate(ctx.QueryParam("DateUntil")),
+		Limit:     ifNotEmptyInt(ctx.QueryParam("Limit")),
+		Offset:    ifNotEmptyInt(ctx.QueryParam("Offset")),
 	}
 	ch, err := acct.AggregateCategories(query)
 	if err != nil {
@@ -114,10 +115,10 @@ func (s *Server) GetApiSummary(ctx echo.Context) error {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 	}
 	query := account.QuerySpec{
-		DateFrom:    ifNotEmptyDate(ctx.QueryParam("DateFrom")),
-		DateUntil:   ifNotEmptyDate(ctx.QueryParam("DateUntil")),
-		Limit:       ifNotEmptyInt(ctx.QueryParam("Limit")),
-		Offset:      ifNotEmptyInt(ctx.QueryParam("Offset")),
+		DateFrom:  ifNotEmptyDate(ctx.QueryParam("DateFrom")),
+		DateUntil: ifNotEmptyDate(ctx.QueryParam("DateUntil")),
+		Limit:     ifNotEmptyInt(ctx.QueryParam("Limit")),
+		Offset:    ifNotEmptyInt(ctx.QueryParam("Offset")),
 	}
 	results, err := acct.Summary(query)
 	if err != nil {
@@ -237,9 +238,17 @@ func (s *Server) DeleteApiTransactionsId(ctx echo.Context) error {
 	return ctx.NoContent(http.StatusNoContent)
 }
 
+type specification struct {
+	Port         int
+	FrontendPath string
+}
+
 func main() {
-	var port = flag.Int("port", 9000, "Port for test HTTP server")
-	flag.Parse()
+	var spec specification
+	err := envconfig.Process("accountserver", &spec)
+	if err != nil {
+		log.Fatal("error reading environment variables:", err)
+	}
 
 	s := NewServer()
 
@@ -254,9 +263,9 @@ func main() {
 	e.GET("/api/categories", s.GetApiCategories)
 	e.GET("/api/summary", s.GetApiSummary)
 
-	e.Static("/", "../../frontend/build")
-	e.File("/", "../../frontend/build/index.html")
+	e.Static("/", spec.FrontendPath)
+	e.File("/", fmt.Sprintf("%s/index.html", spec.FrontendPath))
 
 	// And we serve HTTP until the world ends.
-	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%d", *port)))
+	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%d", spec.Port)))
 }

@@ -1,0 +1,5 @@
+#!/bin/bash
+set -ex
+cd ${ACCOUNTS_ROOT}/src
+cd frontend && yarn run build && cd -
+GOBIN=${ACCOUNTS_ROOT}/bin go install knilson.org/accounts/cmd/{query,import,update,learn,server}
