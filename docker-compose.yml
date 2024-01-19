@@ -1,0 +1,12 @@
+# vim: set aw sw=2
+version: '3.5'
+
+services:
+  accounts:
+    build: .
+    container_name: account_server
+    ports:
+      - 9100:9090
+    volumes:
+      - /n/user/richard/src/accounts/data:/app/data
+    restart: unless-stopped
