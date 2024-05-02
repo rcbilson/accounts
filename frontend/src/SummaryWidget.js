@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import * as Transaction from './Transaction.js';
 import SummaryTable from './SummaryTable.js';
 
-export default function SummaryWidget({querySpec}) {
+export default function SummaryWidget({querySpec, showAmounts=true}) {
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [summary, setSummary] = useState({});
@@ -31,7 +31,7 @@ export default function SummaryWidget({querySpec}) {
     return <div>Loading...</div>;
   } else {
     return (
-      <SummaryTable summary={summary} />
+      <SummaryTable summary={summary} showAmounts={showAmounts} />
     )
   }
 }
