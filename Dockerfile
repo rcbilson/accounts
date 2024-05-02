@@ -1,13 +1,16 @@
-FROM golang:1.21-alpine as build-server
+FROM golang:1.21 as build-server
 WORKDIR /src
 COPY backend/go.mod backend/go.sum .
-RUN go mod download
+RUN go mod download && go mod verify
 COPY backend .
 #RUN go build -o /bin/import ./cmd/import
 #RUN go build -o /bin/learn ./cmd/learn
 #RUN go build -o /bin/query ./cmd/query
 #RUN go build -o /bin/update ./cmd/update
+# sqlite requires cgo
+ARG CGO_ENABLED=1
 RUN go build -o /bin/server ./cmd/server
+RUN go build -o /bin/query ./cmd/query
 
 FROM node:19-bullseye as build-frontend
 WORKDIR /src
@@ -16,7 +19,7 @@ RUN yarn install
 COPY frontend .
 RUN yarnpkg run build
 
-FROM alpine:latest
+FROM golang:1.21
 #RUN apk update
 #RUN apk upgrade
 #RUN apk add --no-cache sqlite
