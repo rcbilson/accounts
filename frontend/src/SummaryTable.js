@@ -2,6 +2,9 @@ import React from 'react';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 export default function SummaryTable({summary}) {
+  if (!summary || !summary.amounts) {
+    return <div>Loading...</div>
+  }
   const columns: GridColDef[] = [
     {
       field: 'category',
