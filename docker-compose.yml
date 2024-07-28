@@ -4,6 +4,7 @@ version: '3.5'
 services:
   accounts:
     build: .
+    image: account_server:latest
     container_name: account_server
     ports:
       - 9100:9090

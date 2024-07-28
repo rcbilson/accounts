@@ -15,6 +15,7 @@ RUN go build -o /bin/query ./cmd/query
 FROM node:19-bullseye as build-frontend
 WORKDIR /src
 COPY frontend/package.json frontend/yarn.lock .
+RUN yarn config set network-timeout 300000
 RUN yarn install
 COPY frontend .
 RUN yarnpkg run build
