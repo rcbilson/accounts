@@ -8,7 +8,7 @@ import SummaryWidget from './SummaryWidget.js';
 import DateBuilder from './DateBuilder.js';
 
 function queryDate(y, m, d) {
-  while (m < 0) {
+  while (m <= 0) {
     y -= 1;
     m += 12;
   }
