@@ -4,7 +4,7 @@ set -e
 
 tmpfile=$(mktemp /tmp/accounts-new.XXXXXX)
 
-query 'state="new"' > $tmpfile
+query --state="new" > $tmpfile
 vim $tmpfile
 if update $tmpfile
 then
