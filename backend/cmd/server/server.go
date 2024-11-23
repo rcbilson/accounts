@@ -180,6 +180,10 @@ func (s *Server) insertOrUpdate(ctx echo.Context, r account.Record) error {
 	if err != nil {
 		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error on update/insert: %v", err))
 	}
+	_, err = acct.UpdateLearning(&r)
+	if err != nil {
+		log.Println("error updating learning:", err)
+        }
 	err = acct.CompleteUpdate()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
