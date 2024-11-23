@@ -1,4 +1,4 @@
-FROM golang:1.21 as build-server
+FROM golang:1.21 AS build-server
 WORKDIR /src
 COPY backend/go.mod backend/go.sum .
 RUN go mod download && go mod verify
@@ -12,7 +12,7 @@ ARG CGO_ENABLED=1
 RUN go build -o /bin/server ./cmd/server
 RUN go build -o /bin/query ./cmd/query
 
-FROM node:19-bullseye as build-frontend
+FROM node:19-bullseye AS build-frontend
 WORKDIR /src
 COPY frontend/package.json frontend/yarn.lock .
 RUN yarn config set network-timeout 300000

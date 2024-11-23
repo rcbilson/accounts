@@ -7,9 +7,9 @@ import (
 	"regexp"
 )
 
-var endNumbers = regexp.MustCompile("[0-9]+$")
+var endNumbers = regexp.MustCompile("[0-9]+ *$")
 var endStar = regexp.MustCompile("\\*.*$")
-var confirmation = regexp.MustCompile("[A-Z][0-9][A-Z][0-9][A-Z][0-9]$")
+var confirmation = regexp.MustCompile("[A-Z][0-9][A-Z][0-9][A-Z][0-9] *$")
 
 func (ctx *Context) UpdateLearning(r *Record) (Stats, error) {
 	var stats Stats
