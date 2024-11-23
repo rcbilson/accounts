@@ -54,6 +54,7 @@ func TestLearning(t *testing.T) {
 		{"1", Date(time.Now()), "SQ * PEN ISLAND # 7545", "-75.45", "Frivolities", "One", ""},
 		{"2", Date(time.Now()), "SQ * PEN ISLAND # 4321", "-43.21", "Frivolities", "Two", ""},
 		{"3", Date(time.Now()), "SQ * QWIK-E-MART # 7545", "-75.45", "Frivolities", "Three", ""},
+		{"4", Date(time.Now()), "BILL PAYMENT A1B2C3", "-123.45", "House", "Home", ""},
 	}
 	for _, r := range testRecords {
 		s, err := acct.UpdateLearning(&r)
@@ -77,6 +78,12 @@ func TestLearning(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "One")
 
+	testRecord = Record{"17", Date(time.Now()), "BILL PAYMENT Z9X8Y7", "-123.45", "", "", ""}
+	err = acct.InferCategory(&testRecord)
+	assert.NilError(t, err)
+	assert.Equal(t, testRecord.Category, "House")
+	assert.Equal(t, testRecord.Subcategory, "Home")
+
 	// partial match with different amount, should pick most recent option
 	testRecord = Record{"17", Date(time.Now()), "SQ * PEN ISLAND # 9989", "-99.89", "", "", ""}
 	err = acct.InferCategory(&testRecord)
@@ -95,4 +102,17 @@ func TestLearning(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "Three")
 
+        // bill payment confirmation -- exact match
+	testRecord = Record{"17", Date(time.Now()), "BILL PAYMENT A1B2C3", "-123.45", "", "", ""}
+	err = acct.InferCategory(&testRecord)
+	assert.NilError(t, err)
+	assert.Equal(t, testRecord.Category, "House")
+	assert.Equal(t, testRecord.Subcategory, "Home")
+
+        // bill payment confirmation -- approximate match
+	testRecord = Record{"17", Date(time.Now()), "BILL PAYMENT Z9X8Y7", "-122.34", "", "", ""}
+	err = acct.InferCategory(&testRecord)
+	assert.NilError(t, err)
+	assert.Equal(t, testRecord.Category, "House")
+	assert.Equal(t, testRecord.Subcategory, "Home")
 }

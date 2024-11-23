@@ -3,11 +3,13 @@ package account
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"regexp"
 )
 
 var endNumbers = regexp.MustCompile("[0-9]+$")
 var endStar = regexp.MustCompile("\\*.*$")
+var confirmation = regexp.MustCompile("[A-Z][0-9][A-Z][0-9][A-Z][0-9]$")
 
 func (ctx *Context) UpdateLearning(r *Record) (Stats, error) {
 	var stats Stats
@@ -32,6 +34,15 @@ where :id > sourceid
 		return stats, err
 	}
 	stats.Inserts += getRowsAffected(result)
+
+	noConfirmation := confirmation.ReplaceAllString(r.Descr, "%")
+	if noConfirmation != r.Descr {
+		result, err = ctx.learnStmt.Exec(r.Id, noConfirmation, r.Amount, r.Category, r.Subcategory)
+		if err != nil {
+			return stats, err
+		}
+		stats.Inserts += getRowsAffected(result)
+	}
 
 	noNumbers := endNumbers.ReplaceAllString(r.Descr, "%")
 	if noNumbers != r.Descr {
@@ -76,7 +87,7 @@ func extractCat(row *sql.Row, category *string, subcategory *string) bool {
 	var maybeCat sql.NullString
 	var maybeSubcat sql.NullString
 	err := row.Scan(&maybeCat, &maybeSubcat)
-	if err != nil{
+	if err != nil {
 		return false
 	}
 	*category = maybeString(maybeCat)
@@ -85,12 +96,17 @@ func extractCat(row *sql.Row, category *string, subcategory *string) bool {
 }
 
 func (ctx *Context) InferCategory(r *Record) error {
+	err, _ := ctx.InferCategoryWithExplanation(r)
+	return err
+}
+
+func (ctx *Context) InferCategoryWithExplanation(r *Record) (err error, explanation []string) {
 	if ctx.findAmtStmt == nil {
 		findAmt, err := ctx.db.Prepare(`
 select category, subcategory from learned_cat where ? like pattern and amount==?
                 `)
 		if err != nil {
-			return err
+			return err, explanation
 		}
 		ctx.findAmtStmt = findAmt
 	}
@@ -103,13 +119,21 @@ order by length(pattern) desc, sourceid desc
 limit 1
                 `)
 		if err != nil {
-			return err
+			return err, explanation
 		}
 		ctx.findApproxStmt = findApprox
 	}
 
-	if !extractCat(ctx.findAmtStmt.QueryRow(r.Descr, r.Amount), &r.Category, &r.Subcategory) {
-		extractCat(ctx.findApproxStmt.QueryRow(r.Descr), &r.Category, &r.Subcategory)
+	explanation = append(explanation, fmt.Sprintf("looking for descr %s amount %s\n", r.Descr, r.Amount))
+	if extractCat(ctx.findAmtStmt.QueryRow(r.Descr, r.Amount), &r.Category, &r.Subcategory) {
+		explanation = append(explanation, fmt.Sprintf("descr+amount found %s/%s", r.Category, r.Subcategory))
+		return nil, explanation
 	}
-	return nil
+	explanation = append(explanation, fmt.Sprintf("no descr+amount found; looking for descr %s\n", r.Descr))
+	if extractCat(ctx.findApproxStmt.QueryRow(r.Descr), &r.Category, &r.Subcategory) {
+		explanation = append(explanation, fmt.Sprintf("descr found %s/%s", r.Category, r.Subcategory))
+		return nil, explanation
+	}
+	explanation = append(explanation, "no descr found; no cat/subcat")
+	return nil, explanation
 }
