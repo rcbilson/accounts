@@ -21,7 +21,7 @@ func (ctx *Context) UpdateLearning(r *Record) (Stats, error) {
 insert into learned_cat values(:id, :descr, :amount, :category, :subcategory)
 on conflict (pattern, amount)
 do update set sourceid=:id, category=:category, subcategory=:subcategory
-where :id > sourceid
+where :id >= sourceid
                 `)
 		if err != nil {
 			return stats, err
