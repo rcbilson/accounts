@@ -3,6 +3,7 @@ bin/import
 bin/query
 bin/update
 bin/server
+bin/explain
 data/
 .DS_Store
 *.swp
