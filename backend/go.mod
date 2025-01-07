@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/labstack/echo/v4 v4.9.1
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.24
 	gotest.tools v2.2.0+incompatible
 )
 
