@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \ 
     go build -o /bin/server ./cmd/server
 
-FROM node:19-bullseye AS build-frontend
+FROM node:23-bullseye AS build-frontend
 WORKDIR /src
 COPY frontend/package.json frontend/yarn.lock .
 RUN yarn config set network-timeout 300000
