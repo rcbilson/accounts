@@ -27,7 +27,7 @@ FROM alpine:latest
 COPY --from=build-frontend /src/build /app/frontend
 COPY --from=build-server /bin /app/bin
 EXPOSE 9090
-ENV ACCOUNTS_DBFILE /app/data/xact.db
-ENV ACCOUNTSERVER_FRONTENDPATH /app/frontend
-ENV ACCOUNTSERVER_PORT 9090
+ENV ACCOUNTS_DBFILE=/app/data/xact.db
+ENV ACCOUNTSERVER_FRONTENDPATH=/app/frontend
+ENV ACCOUNTSERVER_PORT=9090
 CMD ["/app/bin/server"]
