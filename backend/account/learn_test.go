@@ -102,17 +102,46 @@ func TestLearning(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Subcategory, "Three")
 
-        // bill payment confirmation -- exact match
+	// bill payment confirmation -- exact match
 	testRecord = Record{"17", Date(time.Now()), "BILL PAYMENT A1B2C3", "-123.45", "", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Category, "House")
 	assert.Equal(t, testRecord.Subcategory, "Home")
 
-        // bill payment confirmation -- approximate match
+	// bill payment confirmation -- approximate match
 	testRecord = Record{"17", Date(time.Now()), "BILL PAYMENT Z9X8Y7", "-122.34", "", "", ""}
 	err = acct.InferCategory(&testRecord)
 	assert.NilError(t, err)
 	assert.Equal(t, testRecord.Category, "House")
 	assert.Equal(t, testRecord.Subcategory, "Home")
+}
+
+func TestRestrictedPattern(t *testing.T) {
+	acct := setupLearningTest(t)
+
+	err := acct.BeginUpdate()
+	assert.NilError(t, err)
+	defer acct.AbortUpdate()
+
+	testRecords := []Record{
+		{"1", Date(time.Now()), "1234", "-75.45", "Frivolities", "Three", ""},
+		{"2", Date(time.Now()), " A7B6C5", "-75.45", "Frivolities", "Two", ""},
+		{"3", Date(time.Now()), "* star", "-75.45", "Frivolities", "One", ""},
+	}
+	for _, r := range testRecords {
+		s, err := acct.UpdateLearning(&r)
+		assert.NilError(t, err)
+		assert.Assert(t, s.Inserts > 0)
+	}
+
+	err = acct.CompleteUpdate()
+	assert.NilError(t, err)
+
+	// no match
+	testRecord := Record{"17", Date(time.Now()), "BILL PAYMENT Z9X8Y7", "-123.45", "", "", ""}
+	err = acct.InferCategory(&testRecord)
+	assert.NilError(t, err)
+	assert.Equal(t, testRecord.Category, "")
+	assert.Equal(t, testRecord.Subcategory, "")
 }

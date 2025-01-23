@@ -36,7 +36,7 @@ where :id >= sourceid
 	stats.Inserts += getRowsAffected(result)
 
 	noConfirmation := confirmation.ReplaceAllString(r.Descr, "%")
-	if noConfirmation != r.Descr {
+	if noConfirmation != "%" && noConfirmation != r.Descr {
 		result, err = ctx.learnStmt.Exec(r.Id, noConfirmation, r.Amount, r.Category, r.Subcategory)
 		if err != nil {
 			return stats, err
@@ -45,7 +45,10 @@ where :id >= sourceid
 	}
 
 	noNumbers := endNumbers.ReplaceAllString(r.Descr, "%")
-	if noNumbers != r.Descr {
+	if noNumbers == "%" {
+		// Don't allow pattern to consume entire string
+		noNumbers = r.Descr
+	} else if noNumbers != r.Descr {
 		result, err = ctx.learnStmt.Exec(r.Id, noNumbers, r.Amount, r.Category, r.Subcategory)
 		if err != nil {
 			return stats, err
@@ -54,7 +57,7 @@ where :id >= sourceid
 	}
 
 	noStar := endStar.ReplaceAllString(noNumbers, "%")
-	if noStar != noNumbers {
+	if noStar != "%" && noStar != noNumbers {
 		result, err = ctx.learnStmt.Exec(r.Id, noStar, r.Amount, r.Category, r.Subcategory)
 		if err != nil {
 			return stats, err
