@@ -183,7 +183,7 @@ func (s *Server) insertOrUpdate(ctx echo.Context, r account.Record) error {
 	_, err = acct.UpdateLearning(&r)
 	if err != nil {
 		log.Println("error updating learning:", err)
-        }
+	}
 	err = acct.CompleteUpdate()
 	if err != nil {
 		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
@@ -243,7 +243,7 @@ func (s *Server) DeleteApiTransactionsId(ctx echo.Context) error {
 }
 
 type specification struct {
-	Port         int
+	Port         int `default:"9000"`
 	FrontendPath string
 }
 
