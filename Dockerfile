@@ -24,7 +24,7 @@ FROM alpine:latest
 #RUN apk update
 #RUN apk upgrade
 #RUN apk add --no-cache sqlite
-COPY --from=build-frontend /src/build /app/frontend
+COPY --from=build-frontend /src/dist /app/frontend
 COPY --from=build-server /bin /app/bin
 EXPOSE 9090
 ENV ACCOUNTS_DBFILE=/app/data/xact.db
