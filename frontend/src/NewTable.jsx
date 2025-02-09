@@ -20,7 +20,8 @@ export default function NewTable({items, onUpdate, onDelete, onAccept}) {
     {
       field: 'descr',
       headerName: 'Description',
-      width: 450,
+      minwidth: 150,
+      flex: 1,
       editable: false,
     },
     {
@@ -62,7 +63,7 @@ export default function NewTable({items, onUpdate, onDelete, onAccept}) {
   ];
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
+    <Box sx={{ height: '100%', width: '100%'}}>
       <DataGrid
         rows={items}
         columns={columns}
