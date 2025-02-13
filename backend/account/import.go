@@ -15,7 +15,10 @@ func parseTD(record []string) (*Record, error) {
 	var r Record
 	t, err := time.Parse("01/02/2006", record[0])
 	if err != nil {
-		return nil, err
+                t, err = time.Parse("2006-01-02", record[0])
+		if err != nil {
+			return nil, err
+		}
 	}
 	r.Date = Date(t)
 	r.Descr = record[1]
