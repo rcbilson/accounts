@@ -130,13 +130,6 @@ func (s *Server) GetApiSummary(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results)
 }
 
-func emptyIfNil(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
 func contains(slice []string, target string) bool {
 	for _, s := range slice {
 		if s == target {
@@ -209,7 +202,7 @@ func (s *Server) PostApiTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) PostApiTransactionsId(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/transactions/"):]
+	id := r.PathValue("id")
 	var rec account.Record
 	err := json.NewDecoder(r.Body).Decode(&rec)
 	if err != nil {
@@ -226,7 +219,7 @@ func (s *Server) PostApiTransactionsId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteApiTransactionsId(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/transactions/"):]
+	id := r.PathValue("id")
 	acct, err := account.Open()
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
@@ -266,26 +259,21 @@ func main() {
 
 	s := NewServer()
 
-	http.HandleFunc("/api/transactions", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			s.GetApiTransactions(w, r)
-		} else if r.Method == http.MethodPost {
-			s.PostApiTransactions(w, r)
-		}
-	})
-	http.HandleFunc("/api/transactions/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			s.PostApiTransactionsId(w, r)
-		} else if r.Method == http.MethodDelete {
-			s.DeleteApiTransactionsId(w, r)
-		}
-	})
-	http.HandleFunc("/api/import", s.PostApiImport)
-	http.HandleFunc("/api/categories", s.GetApiCategories)
-	http.HandleFunc("/api/summary", s.GetApiSummary)
+	http.HandleFunc("GET /api/transactions", s.GetApiTransactions)
+	http.HandleFunc("POST /api/transactions", s.PostApiTransactions)
+	http.HandleFunc("POST /api/transactions/{id}", s.PostApiTransactionsId)
+	http.HandleFunc("DELETE /api/transactions/{id}", s.DeleteApiTransactionsId)
+	http.HandleFunc("POST /api/import", s.PostApiImport)
+	http.HandleFunc("GET /api/categories", s.GetApiCategories)
+	http.HandleFunc("GET /api/summary", s.GetApiSummary)
 
-	fs := http.FileServer(http.Dir(spec.FrontendPath))
-	http.Handle("/", fs)
+	// bundled assets and static resources
+	http.Handle("GET /assets/", http.FileServer(http.Dir(spec.FrontendPath)))
+	http.Handle("GET /static/", http.FileServer(http.Dir(spec.FrontendPath)))
+	// For other requests, serve up the frontend code
+	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, fmt.Sprintf("%s/index.html", spec.FrontendPath))
+	})
 
 	log.Println("server listening on port", spec.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", spec.Port), nil))
