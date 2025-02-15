@@ -1,14 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"knilson.org/accounts/account"
 )
 
@@ -19,14 +18,12 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-// This function wraps sending of an error in the Error format, and
-// handling the failure to marshal that.
-func sendError(ctx echo.Context, code int, message string) error {
+func sendError(w http.ResponseWriter, code int, message string) {
 	type Error struct {
 		Message string `json:"message"`
 	}
-	err := ctx.JSON(code, Error{message})
-	return err
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(Error{message})
 }
 
 func ifNotEmptyDate(s string) *account.Date {
@@ -58,73 +55,79 @@ func ifNotEmpty(s string) *string {
 	return &s
 }
 
-// (GET /transactions)
-func (s *Server) GetApiTransactions(ctx echo.Context) error {
+func (s *Server) GetApiTransactions(w http.ResponseWriter, r *http.Request) {
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
 	query := account.QuerySpec{
-		DateFrom:    ifNotEmptyDate(ctx.QueryParam("DateFrom")),
-		DateUntil:   ifNotEmptyDate(ctx.QueryParam("DateUntil")),
-		DescrLike:   ifNotEmpty(ctx.QueryParam("DescrLike")),
-		Category:    ifNotEmpty(ctx.QueryParam("Category")),
-		Subcategory: ifNotEmpty(ctx.QueryParam("Subcategory")),
-		State:       ifNotEmpty(ctx.QueryParam("State")),
-		Limit:       ifNotEmptyInt(ctx.QueryParam("Limit")),
-		Offset:      ifNotEmptyInt(ctx.QueryParam("Offset")),
+		DateFrom:    ifNotEmptyDate(r.URL.Query().Get("DateFrom")),
+		DateUntil:   ifNotEmptyDate(r.URL.Query().Get("DateUntil")),
+		DescrLike:   ifNotEmpty(r.URL.Query().Get("DescrLike")),
+		Category:    ifNotEmpty(r.URL.Query().Get("Category")),
+		Subcategory: ifNotEmpty(r.URL.Query().Get("Subcategory")),
+		State:       ifNotEmpty(r.URL.Query().Get("State")),
+		Limit:       ifNotEmptyInt(r.URL.Query().Get("Limit")),
+		Offset:      ifNotEmptyInt(r.URL.Query().Get("Offset")),
 	}
 	ch, err := acct.Query(query)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		return
 	}
 	results := make([]account.Record, 0)
 	for r := range ch {
 		results = append(results, *r)
 	}
-	return ctx.JSON(http.StatusOK, results)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
 
-// (GET /api/categories)
-func (s *Server) GetApiCategories(ctx echo.Context) error {
+func (s *Server) GetApiCategories(w http.ResponseWriter, r *http.Request) {
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
 	query := account.QuerySpec{
-		DateFrom:  ifNotEmptyDate(ctx.QueryParam("DateFrom")),
-		DateUntil: ifNotEmptyDate(ctx.QueryParam("DateUntil")),
-		Limit:     ifNotEmptyInt(ctx.QueryParam("Limit")),
-		Offset:    ifNotEmptyInt(ctx.QueryParam("Offset")),
+		DateFrom:  ifNotEmptyDate(r.URL.Query().Get("DateFrom")),
+		DateUntil: ifNotEmptyDate(r.URL.Query().Get("DateUntil")),
+		Limit:     ifNotEmptyInt(r.URL.Query().Get("Limit")),
+		Offset:    ifNotEmptyInt(r.URL.Query().Get("Offset")),
 	}
 	ch, err := acct.AggregateCategories(query)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		return
 	}
 	results := make([]account.Aggregate, 0)
 	for r := range ch {
 		results = append(results, *r)
 	}
-	return ctx.JSON(http.StatusOK, results)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
 
-// (GET /api/summary)
-func (s *Server) GetApiSummary(ctx echo.Context) error {
+func (s *Server) GetApiSummary(w http.ResponseWriter, r *http.Request) {
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
 	query := account.QuerySpec{
-		DateFrom:  ifNotEmptyDate(ctx.QueryParam("DateFrom")),
-		DateUntil: ifNotEmptyDate(ctx.QueryParam("DateUntil")),
-		Limit:     ifNotEmptyInt(ctx.QueryParam("Limit")),
-		Offset:    ifNotEmptyInt(ctx.QueryParam("Offset")),
+		DateFrom:  ifNotEmptyDate(r.URL.Query().Get("DateFrom")),
+		DateUntil: ifNotEmptyDate(r.URL.Query().Get("DateUntil")),
+		Limit:     ifNotEmptyInt(r.URL.Query().Get("Limit")),
+		Offset:    ifNotEmptyInt(r.URL.Query().Get("Offset")),
 	}
 	results, err := acct.Summary(query)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		return
 	}
-	return ctx.JSON(http.StatusOK, results)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
 
 func emptyIfNil(s *string) string {
@@ -143,103 +146,110 @@ func contains(slice []string, target string) bool {
 	return false
 }
 
-// (POST /import)
-func (s *Server) PostApiImport(ctx echo.Context) error {
-	if !contains(ctx.Request().Header["Content-Type"], "text/csv") {
-		return sendError(ctx, http.StatusUnsupportedMediaType, "this route only accepts text/csv")
+func (s *Server) PostApiImport(w http.ResponseWriter, r *http.Request) {
+	if !contains(r.Header["Content-Type"], "text/csv") {
+		sendError(w, http.StatusUnsupportedMediaType, "this route only accepts text/csv")
+		return
 	}
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
-	_, err = acct.Import(ctx.Request().Body)
+	_, err = acct.Import(r.Body)
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error importing file: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error importing file: %v", err))
+		return
 	}
-
-	return ctx.NoContent(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// (POST /transactions)
-func (s *Server) insertOrUpdate(ctx echo.Context, r account.Record) error {
+func (s *Server) insertOrUpdate(w http.ResponseWriter, _ *http.Request, rec account.Record) {
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
 	err = acct.BeginUpdate()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+		return
 	}
 	defer acct.AbortUpdate()
 
-	if r.Id == "" {
-		_, err = acct.Insert(&r)
+	if rec.Id == "" {
+		_, err = acct.Insert(&rec)
 	} else {
-		_, err = acct.Update(&r)
+		_, err = acct.Update(&rec)
 	}
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error on update/insert: %v", err))
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error on update/insert: %v", err))
+		return
 	}
-	_, err = acct.UpdateLearning(&r)
+	_, err = acct.UpdateLearning(&rec)
 	if err != nil {
 		log.Println("error updating learning:", err)
 	}
 	err = acct.CompleteUpdate()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+		return
 	}
-
-	return ctx.NoContent(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// (POST /transactions)
-func (s *Server) PostApiTransactions(ctx echo.Context) error {
-	var r account.Record
-	err := ctx.Bind(&r)
+func (s *Server) PostApiTransactions(w http.ResponseWriter, r *http.Request) {
+	var rec account.Record
+	err := json.NewDecoder(r.Body).Decode(&rec)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
+		sendError(w, http.StatusBadRequest, "Invalid format for Transaction")
+		return
 	}
-	return s.insertOrUpdate(ctx, r)
+	s.insertOrUpdate(w, r, rec)
 }
 
-// (POST /transactions/id)
-func (s *Server) PostApiTransactionsId(ctx echo.Context) error {
-	id := ctx.Param("id")
-	var r account.Record
-	err := ctx.Bind(&r)
+func (s *Server) PostApiTransactionsId(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/api/transactions/"):]
+	var rec account.Record
+	err := json.NewDecoder(r.Body).Decode(&rec)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, "Invalid format for Transaction")
+		sendError(w, http.StatusBadRequest, "Invalid format for Transaction")
+		return
 	}
-	if r.Id == "" {
-		r.Id = id
-	} else if r.Id != id {
-		return sendError(ctx, http.StatusBadRequest, "ID must be empty or equal to path ID")
+	if rec.Id == "" {
+		rec.Id = id
+	} else if rec.Id != id {
+		sendError(w, http.StatusBadRequest, "ID must be empty or equal to path ID")
+		return
 	}
-	return s.insertOrUpdate(ctx, r)
+	s.insertOrUpdate(w, r, rec)
 }
 
-// (DELETE /transactions/id)
-func (s *Server) DeleteApiTransactionsId(ctx echo.Context) error {
-	id := ctx.Param("id")
+func (s *Server) DeleteApiTransactionsId(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/api/transactions/"):]
 	acct, err := account.Open()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
 	}
 	err = acct.BeginUpdate()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error beginning transaction: %v", err))
+		return
 	}
 	defer acct.AbortUpdate()
 
 	_, err = acct.Delete(id)
 	if err != nil {
-		return sendError(ctx, http.StatusBadRequest, fmt.Sprintf("error deleting transaction: %v", err))
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error deleting transaction: %v", err))
+		return
 	}
 	err = acct.CompleteUpdate()
 	if err != nil {
-		return sendError(ctx, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error completing update: %v", err))
+		return
 	}
-	return ctx.NoContent(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type specification struct {
@@ -256,20 +266,27 @@ func main() {
 
 	s := NewServer()
 
-	e := echo.New()
-	e.Use(middleware.Logger())
+	http.HandleFunc("/api/transactions", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			s.GetApiTransactions(w, r)
+		} else if r.Method == http.MethodPost {
+			s.PostApiTransactions(w, r)
+		}
+	})
+	http.HandleFunc("/api/transactions/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			s.PostApiTransactionsId(w, r)
+		} else if r.Method == http.MethodDelete {
+			s.DeleteApiTransactionsId(w, r)
+		}
+	})
+	http.HandleFunc("/api/import", s.PostApiImport)
+	http.HandleFunc("/api/categories", s.GetApiCategories)
+	http.HandleFunc("/api/summary", s.GetApiSummary)
 
-	e.GET("/api/transactions", s.GetApiTransactions)
-	e.POST("/api/transactions", s.PostApiTransactions)
-	e.POST("/api/transactions/:id", s.PostApiTransactionsId)
-	e.DELETE("/api/transactions/:id", s.DeleteApiTransactionsId)
-	e.POST("/api/import", s.PostApiImport)
-	e.GET("/api/categories", s.GetApiCategories)
-	e.GET("/api/summary", s.GetApiSummary)
+	fs := http.FileServer(http.Dir(spec.FrontendPath))
+	http.Handle("/", fs)
 
-	e.Static("/", spec.FrontendPath)
-	e.File("/", fmt.Sprintf("%s/index.html", spec.FrontendPath))
-
-	// And we serve HTTP until the world ends.
-	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%d", spec.Port)))
+	log.Println("server listening on port", spec.Port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", spec.Port), nil))
 }
