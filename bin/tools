@@ -1,3 +1,7 @@
 export ACCOUNTS_ROOT=$HOME/src/accounts
-export ACCOUNTS_DBFILE=$ACCOUNTS_ROOT/data/xact.db
-export PATH=$HOME/src/accounts/bin:$PATH
+export PATH=$ACCOUNTS_ROOT/bin:$PATH
+case "$1" in
+  prod) export ACCOUNTS_DBFILE=/n/config/accounts/data/xact.db ;;
+  *) export ACCOUNTS_DBFILE=$ACCOUNTS_ROOT/data/xact.db ;;
+esac
+echo ACCOUNTS_DBFILE=$ACCOUNTS_DBFILE
