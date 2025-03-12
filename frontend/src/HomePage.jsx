@@ -5,6 +5,7 @@ import { Typography } from '@mui/material';
 import PermanentDrawer from './PermanentDrawer.jsx';
 import CategoryWidget from './CategoryWidget.jsx';
 import SummaryWidget from './SummaryWidget.jsx';
+import SummaryChartWidget from './SummaryChartWidget.jsx';
 import DateBuilder from './DateBuilder.jsx';
 
 function queryDate(y, m, d) {
@@ -43,7 +44,7 @@ export default function HomePage() {
           <SummaryWidget querySpec={querySpec}/>
           <CategoryWidget querySpec={querySpec}/>
         </Stack>
-        <hr/>
+        <SummaryChartWidget querySpec={querySpec}/>
         <Stack direction='row'>
           {summarySince(qLastMonth)}
           {summarySince(qLast3Month)}

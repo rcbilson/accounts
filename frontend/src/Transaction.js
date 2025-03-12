@@ -91,3 +91,8 @@ export async function Categories(querySpec) {
 export async function Summary(querySpec) {
   return doQuery("/api/summary", querySpec);
 }
+
+export async function SummaryChart(querySpec) {
+  let {limit, ...qs} = querySpec;
+  return doQuery("/api/summaryChart", qs);
+}

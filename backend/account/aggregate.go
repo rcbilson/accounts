@@ -105,3 +105,77 @@ func (ctx *Context) Summary(spec QuerySpec) (*Summary, error) {
 
 	return &result, nil
 }
+
+type MonthAggregate struct {
+	Aggregate
+	Month string `json:"month"`
+}
+
+type SummaryChart struct {
+	Amounts []MonthAggregate `json:"amounts"`
+}
+
+func buildMonthAggregate(rows *sql.Rows) (<-chan *MonthAggregate, error) {
+	ch := make(chan *MonthAggregate)
+
+	go func() {
+		defer rows.Close()
+		defer close(ch)
+
+		for rows.Next() {
+			var r MonthAggregate
+			var maybeCat sql.NullString
+			var amount float64
+			err := rows.Scan(&r.Month, &maybeCat, &amount)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			r.Amount = fmt.Sprintf("%.2f", amount)
+			r.Category = maybeString(maybeCat)
+			ch <- &r
+		}
+		err := rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	return ch, nil
+}
+
+// as a percentage of income
+//
+//with incomebymonth as
+//	(select strftime("%Y-%m", date) as mth, sum(amount) as inc from xact where category="Income" group by mth)
+//select strftime("%Y-%m", date) as month, kc.key, sum(-amount)*100/ibm.inc from xact
+//join keycats as kc on xact.category=kc.category
+//join incomebymonth as ibm on month=ibm.mth
+
+func (ctx *Context) SummaryChart(spec QuerySpec) (*SummaryChart, error) {
+	var result SummaryChart
+
+	query, params := buildQueryWhere(spec,
+		`
+select strftime("%Y-%m", date) as month, kc.key, sum(-amount) from xact
+join keycats as kc on xact.category=kc.category
+		`,
+		"",
+		"GROUP BY month, kc.key ORDER BY month ASC")
+	rows, err := ctx.db.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+
+	ch, err := buildMonthAggregate(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Amounts = make([]MonthAggregate, 0)
+	for agg := range ch {
+		result.Amounts = append(result.Amounts, *agg)
+	}
+
+	return &result, nil
+}

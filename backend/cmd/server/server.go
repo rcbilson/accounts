@@ -130,6 +130,27 @@ func (s *Server) GetApiSummary(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results)
 }
 
+func (s *Server) GetApiSummaryChart(w http.ResponseWriter, r *http.Request) {
+	acct, err := account.Open()
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
+		return
+	}
+	query := account.QuerySpec{
+		DateFrom:  ifNotEmptyDate(r.URL.Query().Get("DateFrom")),
+		DateUntil: ifNotEmptyDate(r.URL.Query().Get("DateUntil")),
+		Limit:     ifNotEmptyInt(r.URL.Query().Get("Limit")),
+		Offset:    ifNotEmptyInt(r.URL.Query().Get("Offset")),
+	}
+	results, err := acct.SummaryChart(query)
+	if err != nil {
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("error querying db: %v", err))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
 func contains(slice []string, target string) bool {
 	for _, s := range slice {
 		if s == target {
@@ -266,6 +287,7 @@ func main() {
 	http.HandleFunc("POST /api/import", s.PostApiImport)
 	http.HandleFunc("GET /api/categories", s.GetApiCategories)
 	http.HandleFunc("GET /api/summary", s.GetApiSummary)
+	http.HandleFunc("GET /api/summaryChart", s.GetApiSummaryChart)
 
 	// bundled assets and static resources
 	http.Handle("GET /assets/", http.FileServer(http.Dir(spec.FrontendPath)))
