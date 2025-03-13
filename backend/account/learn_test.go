@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -22,6 +21,7 @@ func setupLearningTest(t *testing.T) *Context {
 	return acct
 }
 
+/*
 func dumpLearning(t *testing.T, acct *Context) {
 	rows, err := acct.db.Query("select sourceid, pattern, amount, category, subcategory from learned_cat")
 	assert.NilError(t, err)
@@ -33,6 +33,7 @@ func dumpLearning(t *testing.T, acct *Context) {
 		fmt.Println(sourceid, pattern, amount, category, subcategory)
 	}
 }
+*/
 
 func TestLearningErrors(t *testing.T) {
 	acct := setupLearningTest(t)

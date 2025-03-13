@@ -55,7 +55,7 @@ INSERT INTO key_categories VALUES('Necessities', 'Responsibilities')
 	return acct
 }
 
-func materialize[R any](t *testing.T, ch <-chan *R) []R {
+func materialize[R any](_ *testing.T, ch <-chan *R) []R {
 	result := make([]R, 0)
 	for rec := range ch {
 		result = append(result, *rec)

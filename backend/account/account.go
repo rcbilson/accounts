@@ -55,7 +55,7 @@ func (ctx *Context) clearUpdateStatements() {
 
 func (ctx *Context) BeginUpdate() error {
 	if ctx.tx != nil {
-		return errors.New("Attempt to begin an update while an update is already in progress.")
+		return errors.New("attempt to begin an update while an update is already in progress")
 	}
 	var err error
 	ctx.tx, err = ctx.db.Begin()
@@ -72,7 +72,7 @@ func (ctx *Context) AbortUpdate() {
 
 func (ctx *Context) CompleteUpdate() error {
 	if ctx.tx == nil {
-		return errors.New("Attempt to complete an update without an update in progress.")
+		return errors.New("attempt to complete an update without an update in progress")
 	}
 	err := ctx.tx.Commit()
 	ctx.tx = nil
