@@ -92,7 +92,24 @@ export async function Summary(querySpec) {
   return doQuery("/api/summary", querySpec);
 }
 
-export async function SummaryChart(querySpec) {
-  let {limit, ...qs} = querySpec;
-  return doQuery("/api/summaryChart", qs);
-}
+export async function SummaryChart(summaryChartSpec) {
+  let specs = []
+  if (summaryChartSpec.dateFrom) {
+    specs.push("DateFrom=" + summaryChartSpec.dateFrom);
+  }
+  if (summaryChartSpec.dateUntil) {
+    specs.push("DateUntil=" + summaryChartSpec.dateUntil);
+  }
+  if (summaryChartSpec.chartType) {
+    specs.push("ChartType=" + summaryChartSpec.chartType);
+  }
+  let path = "/api/summaryChart";
+  if (specs.length > 0) {
+    path += "?" + specs[0]
+    specs.slice(1).forEach((e) => { path += "&" + e })
+  } else if (defaultQueryString) {
+    path += defaultQueryString;
+  }
+  return fetch(encodeURI(path))
+    .then(res => res.json())
+  }

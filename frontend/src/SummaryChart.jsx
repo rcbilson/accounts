@@ -1,23 +1,9 @@
 import * as React from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
-//import { axisClasses } from '@mui/x-charts/ChartsAxis';
+
 const chartSetting = {
-/*
-  yAxis: [
-    {
-      label: 'rainfall (mm)',
-    },
-  ],
-*/
   width: 900,
   height: 300,
-/*
-  sx: {
-    [`.${axisClasses.left} .${axisClasses.label}`]: {
-      transform: 'translate(-20px, 0)',
-    },
-  },
-*/
 };
 
 // the incoming data is in the form 

@@ -136,11 +136,10 @@ func (s *Server) GetApiSummaryChart(w http.ResponseWriter, r *http.Request) {
 		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error connecting to db: %v", err))
 		return
 	}
-	query := account.QuerySpec{
+	query := account.SummaryChartSpec{
 		DateFrom:  ifNotEmptyDate(r.URL.Query().Get("DateFrom")),
 		DateUntil: ifNotEmptyDate(r.URL.Query().Get("DateUntil")),
-		Limit:     ifNotEmptyInt(r.URL.Query().Get("Limit")),
-		Offset:    ifNotEmptyInt(r.URL.Query().Get("Offset")),
+		ChartType: ifNotEmpty(r.URL.Query().Get("ChartType")),
 	}
 	results, err := acct.SummaryChart(query)
 	if err != nil {

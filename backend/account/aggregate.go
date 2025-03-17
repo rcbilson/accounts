@@ -144,36 +144,24 @@ func buildMonthAggregate(rows *sql.Rows) (<-chan *MonthAggregate, error) {
 	return ch, nil
 }
 
-// as a percentage of income
-//
-//with incomebymonth as
-//	(select strftime("%Y-%m", date) as mth, sum(amount) as inc from xact where category="Income" group by mth)
-//select strftime("%Y-%m", date) as month, kc.key, sum(-amount)*100/ibm.inc from xact
-//join keycats as kc on xact.category=kc.category
-//join incomebymonth as ibm on month=ibm.mth
+const monthPercent = `
+with incomebymonth as
+	(select strftime("%%Y-%%m", date) as mth, sum(amount) as inc from xact where category="Income" group by mth)
+select strftime("%%Y-%%m", date) as month, kc.key, sum(-amount)*100/ibm.inc from xact
+join keycats as kc on xact.category=kc.category
+join incomebymonth as ibm on month=ibm.mth
+%[1]s
+group by month, kc.key
+`
 
-// monthly total
-//
-//select strftime("%Y-%m", date) as month, kc.key, sum(-amount) from xact
-//join keycats as kc on xact.category=kc.category
+const monthDollar = `
+select strftime("%%Y-%%m", date) as month, kc.key, sum(-amount) from xact
+join keycats as kc on xact.category=kc.category
+%[1]s
+group by month, kc.key
+`
 
-func (ctx *Context) SummaryChart(spec QuerySpec) (*SummaryChart, error) {
-	var result SummaryChart
-
-	dateWhere := ""
-	if spec.DateFrom != nil {
-		dateWhere = fmt.Sprintf("where date >= '%s'", spec.DateFrom.String())
-	}
-	if spec.DateUntil != nil {
-		if dateWhere != "" {
-			dateWhere = fmt.Sprintf("%s AND date <= '%s'", dateWhere, spec.DateUntil.String())
-		} else {
-			dateWhere = fmt.Sprintf("where date <= '%s'", spec.DateUntil.String())
-		}
-	}
-
-	query := fmt.Sprintf(
-		`
+const monthCumulative = `
 with months as (
 	select distinct strftime("%%Y-%%m", date) as month from xact %[1]s
 ),
@@ -207,7 +195,12 @@ month_cumulative as (
 		key,
 		sum(total) over (partition by key order by month rows between unbounded preceding and current row) as total
 	from month_filled mf
-),
+)
+`
+
+const cumulativeDollar = monthCumulative + `select month, key, total from month_cumulative order by month asc`
+
+const cumulativePercent = monthCumulative + `,
 income_totals as (
         select strftime("%%Y-%%m", date) as month, sum(amount) as total from xact where category="Income" group by month
 ),
@@ -231,8 +224,45 @@ select
 from month_cumulative mf
 join income_cumulative ic on mf.month=ic.month
 order by mf.month asc
-		`,
-		dateWhere)
+`
+
+var queries = map[string]string{
+	"monthPercent":      monthPercent,
+	"monthDollar":       monthDollar,
+	"cumulativePercent": cumulativePercent,
+	"cumulativeDollar":  cumulativeDollar,
+}
+
+type SummaryChartSpec struct {
+	DateFrom  *Date
+	DateUntil *Date
+	ChartType *string
+}
+
+func (ctx *Context) SummaryChart(spec SummaryChartSpec) (*SummaryChart, error) {
+	var result SummaryChart
+
+	dateWhere := ""
+	if spec.DateFrom != nil {
+		dateWhere = fmt.Sprintf("where date >= '%s'", spec.DateFrom.String())
+	}
+	if spec.DateUntil != nil {
+		if dateWhere != "" {
+			dateWhere = fmt.Sprintf("%s AND date <= '%s'", dateWhere, spec.DateUntil.String())
+		} else {
+			dateWhere = fmt.Sprintf("where date <= '%s'", spec.DateUntil.String())
+		}
+	}
+
+	var queryTemplate string
+	if spec.ChartType != nil {
+		queryTemplate, _ = queries[*spec.ChartType]
+	}
+	if queryTemplate == "" {
+		queryTemplate = cumulativePercent
+	}
+
+	query := fmt.Sprintf(queryTemplate, dateWhere)
 	rows, err := ctx.db.Query(query)
 	if err != nil {
 		return nil, err
