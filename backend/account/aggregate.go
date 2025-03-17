@@ -152,17 +152,64 @@ func buildMonthAggregate(rows *sql.Rows) (<-chan *MonthAggregate, error) {
 //join keycats as kc on xact.category=kc.category
 //join incomebymonth as ibm on month=ibm.mth
 
+// monthly total
+//
+//select strftime("%Y-%m", date) as month, kc.key, sum(-amount) from xact
+//join keycats as kc on xact.category=kc.category
+
 func (ctx *Context) SummaryChart(spec QuerySpec) (*SummaryChart, error) {
 	var result SummaryChart
 
-	query, params := buildQueryWhere(spec,
+	dateWhere := ""
+	if spec.DateFrom != nil {
+		dateWhere = fmt.Sprintf("where date >= '%s'", spec.DateFrom.String())
+	}
+	if spec.DateUntil != nil {
+		if dateWhere != "" {
+			dateWhere = fmt.Sprintf("%s AND date <= '%s'", dateWhere, spec.DateUntil.String())
+		} else {
+			dateWhere = fmt.Sprintf("where date <= '%s'", spec.DateUntil.String())
+		}
+	}
+
+	query := fmt.Sprintf(
 		`
-select strftime("%Y-%m", date) as month, kc.key, sum(-amount) from xact
-join keycats as kc on xact.category=kc.category
+with months as (
+	select distinct strftime("%%Y-%%m", date) as month from xact %[1]s
+),
+keys as (
+	select distinct key from keycats
+),
+month_keys as (
+	select month, key from months cross join keys
+),
+month_totals as (
+	select
+		strftime("%%Y-%%m", date) as month,
+		kc.key,
+		sum(-amount) as total
+	from xact
+	join keycats as kc on xact.category=kc.category
+	%[1]s
+	group by month, kc.key
+),
+month_filled as (
+	select
+		mk.month,
+		mk.key,
+		coalesce(mt.total, 0) as total
+	from month_keys mk
+	left join month_totals mt on mk.month = mt.month and mk.key = mt.key
+)
+select
+	month,
+	key,
+	sum(total) over (partition by key order by month rows between unbounded preceding and current row) as total
+from month_filled mf
+order by month asc
 		`,
-		"",
-		"GROUP BY month, kc.key ORDER BY month ASC")
-	rows, err := ctx.db.Query(query, params...)
+		dateWhere)
+	rows, err := ctx.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
