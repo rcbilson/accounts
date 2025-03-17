@@ -200,13 +200,37 @@ month_filled as (
 		coalesce(mt.total, 0) as total
 	from month_keys mk
 	left join month_totals mt on mk.month = mt.month and mk.key = mt.key
+),
+month_cumulative as (
+    select
+		month,
+		key,
+		sum(total) over (partition by key order by month rows between unbounded preceding and current row) as total
+	from month_filled mf
+),
+income_totals as (
+        select strftime("%%Y-%%m", date) as month, sum(amount) as total from xact where category="Income" group by month
+),
+income_filled as (
+        select
+                mk.month,
+                coalesce(mt.total, 0) as total
+        from months mk
+        left join income_totals mt on mk.month = mt.month
+),
+income_cumulative as (
+        select
+                month,
+                sum(total) over (order by month rows between unbounded preceding and current row) as total
+        from income_filled mf
 )
 select
-	month,
-	key,
-	sum(total) over (partition by key order by month rows between unbounded preceding and current row) as total
-from month_filled mf
-order by month asc
+        mf.month,
+        mf.key,
+        mf.total*100/ic.total as total
+from month_cumulative mf
+join income_cumulative ic on mf.month=ic.month
+order by mf.month asc
 		`,
 		dateWhere)
 	rows, err := ctx.db.Query(query)
