@@ -19,7 +19,7 @@ backend:
 
 .PHONY: upgrade-frontend
 upgrade-frontend:
-	cd frontend && yarn upgrade
+	cd frontend && yarn upgrade --latest
 
 .PHONY: upgrade-backend
 upgrade-backend:
