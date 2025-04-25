@@ -15,8 +15,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM node:23-bullseye AS build-frontend
 WORKDIR /src
 COPY frontend/package.json frontend/yarn.lock .
-RUN yarn config set network-timeout 300000
-RUN yarn install
+RUN yarn config set network-timeout 300000 && yarn install
 COPY frontend .
 RUN yarnpkg run build
 
