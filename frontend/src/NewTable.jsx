@@ -53,11 +53,6 @@ export default function NewTable({items, onUpdate, onDelete, onAccept}) {
           label="Accept"
           onClick={() => onAccept(params.row)}
         />,
-        <GridActionsCellItem
-          icon={<DeleteIcon />}
-          label="Delete"
-          onClick={() => onDelete(params.id)}
-        />,
       ]
     },
   ];
